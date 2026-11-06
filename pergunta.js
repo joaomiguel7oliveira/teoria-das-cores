@@ -222,9 +222,9 @@ function diagramaHarmonia(tipo) {
 
   /* amostras da tela de ajuste: cartão (trecho + cor atual juntos), a selecionada em destaque e as outras apagadas */
   .amostras { gap: 12px !important; }
-  .amostra { gap: 0 !important; opacity: .5; transition: opacity .2s, transform .2s; }
+  .amostra { gap: 0 !important; opacity: .5; transition: opacity .2s; }   /* sem deslocamento (transform): em alguns PCs ele fazia a faixa de cor falhar no desenho */
   .amostra:hover { opacity: .85; }
-  .amostra.sel { opacity: 1; transform: translateY(-3px); }
+  .amostra.sel { opacity: 1; }
   .amostra canvas, .amostra .alvo { border-radius: 8px 8px 0 0 !important; outline: 0 !important; }
   .amostra .atual { height: 10px !important; border-radius: 0 0 8px 8px !important; box-shadow: none !important; }
   .amostra.sel canvas, .amostra.sel .alvo { box-shadow: 0 0 0 3px var(--ink); }
@@ -903,10 +903,24 @@ function atualizarBotaoAjuste() {
   coresVistas.add(selecionado);
   acao.innerHTML = coresVistas.size >= GRUPOS.length ? "Confirmar" : "Próxima cor &rsaquo;";
 }
+// repinta a faixa de cor atual (e as amostras chapadas do cacto): protege contra desenho que falha em alguns PCs
+function repintarAmostras() {
+  if (typeof GRUPOS === "undefined") return;
+  document.querySelectorAll(".amostra").forEach((el, i) => {
+    try {
+      const g = GRUPOS[i]; if (!g) return;
+      const alvo = el.querySelector(".alvo"); if (alvo && g.alvo) alvo.style.background = g.alvo;
+      if (typeof atualizarChip === "function" && el.querySelector(".atual")) atualizarChip(i);
+    } catch {}
+  });
+}
+addEventListener("load", () => { repintarAmostras(); setTimeout(repintarAmostras, 500); });
+addEventListener("resize", repintarAmostras);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) repintarAmostras(); });
 document.addEventListener("DOMContentLoaded", () => {
   if (typeof selecionar !== "function" || !document.getElementById("acao")) return;
   const selecionarDaTela = selecionar;
-  selecionar = function (i) { selecionarDaTela(i); atualizarBotaoAjuste(); atualizarBrilho(); };    // qualquer troca de amostra atualiza o botão e o reflexo
+  selecionar = function (i) { selecionarDaTela(i); atualizarBotaoAjuste(); atualizarBrilho(); repintarAmostras(); };    // qualquer troca de amostra atualiza o botão, o reflexo e as faixas de cor
   // antes do clique chegar ao botão: enquanto faltar cor, ele só avança para a próxima cor ainda não vista
   document.addEventListener("click", (e) => {
     if (!e.target.closest("#acao") || confirmada || coresVistas.size >= GRUPOS.length) return;
