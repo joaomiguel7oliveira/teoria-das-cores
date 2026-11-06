@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Protótipo · Paleta ao vivo</title>
+<style>
+  :root { --ink: #16181d; --muted: #7a7a72; --line: #dcd8cf; --ok: #2d6a4f; --bad: #b4452f; --bg: #f3f1ec; --sans: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  body { height: 100dvh; background: var(--bg); color: var(--ink); font-family: var(--sans); display: flex; flex-direction: column; align-items: center; padding: clamp(10px, 2.4vh, 22px) 16px; }
+  .coluna { width: 100%; max-width: 780px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .topo { display: flex; justify-content: space-between; font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  .nome { text-align: center; font-size: clamp(2rem, 8vh, 3.6rem); font-weight: 700; letter-spacing: -.04em; line-height: 1; margin: clamp(6px, 2vh, 18px) 0 4px; }
+  .dica { text-align: center; font-size: .78rem; color: var(--muted); margin: 0 0 clamp(8px, 2vh, 16px); }
+  .cena { flex: 1; min-height: 0; }
+  .cena svg { width: 100%; height: 100%; display: block; border-radius: 6px; }
+  .cena svg * { transition: fill .3s ease; }
+  .c0 { fill: var(--c0); } .c1 { fill: var(--c1); } .c2 { fill: var(--c2); } .c3 { fill: var(--c3); } .c4 { fill: var(--c4); }
+  .paletas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: clamp(10px, 2.2vh, 18px) 0; }
+  .paleta { border: 1px solid var(--line); border-radius: 6px; background: #fff; padding: 8px; cursor: pointer; transition: border-color .15s, transform .15s; }
+  .paleta .faixa { display: flex; height: clamp(26px, 5vh, 40px); border-radius: 3px; overflow: hidden; }
+  .paleta .faixa span { flex: 1; }
+  .paleta:hover, .paleta:focus-visible { border-color: var(--ink); transform: translateY(-2px); outline: none; }
+  .paleta.sel { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  .paleta.certa { border-color: var(--ok); box-shadow: inset 0 0 0 1px var(--ok); }
+  .paleta.errada { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
+  .paleta:disabled { cursor: default; }
+  .acoes { display: flex; flex-direction: column; align-items: center; gap: 8px; min-height: 76px; }
+  .retorno { font-size: .9rem; min-height: 1.3em; }
+  .retorno.ok { color: var(--ok); } .retorno.erro { color: var(--bad); }
+  .btn { width: 250px; background: var(--ink); color: #fff; border: 0; border-radius: 4px; padding: 12px 24px; font: 700 .72rem var(--sans); letter-spacing: .18em; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+  .btn:disabled { background: #cfcbc2; cursor: not-allowed; }
+  .fim { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; }
+  .fim .grande { font-size: clamp(4rem, 16vh, 7rem); font-weight: 700; letter-spacing: -.04em; line-height: 1; }
+  @media (max-width: 560px) { .paletas { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<div class="coluna" id="tela"></div>
+
+<script>
+// ---------- Paletas: 5 cores por harmonia (fundo, 3 cores principais e um destaque) ----------
+const hsl = (h, s, l) => `hsl(${((h % 360) + 360) % 360} ${s}% ${l}%)`;
+const NOMES = { complementar: "Complementar", analoga: "Análoga", triade: "Tríade", tetradica: "Tetrádica", monocromatica: "Monocromática" };
+const GERAR = {
+  complementar: (h) => [hsl(h, 35, 91), hsl(h, 60, 55), hsl(h + 180, 65, 52), hsl(h, 55, 30), hsl(h + 180, 70, 74)],
+  analoga: (h) => [hsl(h, 30, 92), hsl(h, 60, 55), hsl(h + 30, 65, 54), hsl(h - 30, 55, 40), hsl(h + 30, 60, 78)],
+  triade: (h) => [hsl(h, 25, 93), hsl(h, 65, 55), hsl(h + 120, 55, 46), hsl(h + 240, 60, 58), hsl(h + 120, 55, 76)],
+  tetradica: (h) => [hsl(h, 25, 93), hsl(h, 65, 55), hsl(h + 90, 60, 48), hsl(h + 180, 65, 52), hsl(h + 270, 55, 60)],
+  monocromatica: (h) => [hsl(h, 40, 93), hsl(h, 55, 68), hsl(h, 60, 50), hsl(h, 65, 30), hsl(h, 50, 82)],
+};
+const NEUTRO = ["#ecebe7", "#c9c8c3", "#a8a7a2", "#85847f", "#d9d8d3"];
+
+// ---------- Ilustrações simples: cada forma usa uma das 5 cores (c0 a c4) ----------
+const CENAS = [
+  // paisagem com casa
+  `<svg viewBox="0 0 600 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Paisagem com casa">
+    <rect class="c0" width="600" height="400"/>
+    <circle class="c4" cx="470" cy="105" r="46"/>
+    <polygon class="c1" points="0,270 120,150 225,255 330,140 455,262 600,170 600,400 0,400"/>
+    <path class="c2" d="M0 305 Q150 235 300 292 T600 282 L600 400 L0 400Z"/>
+    <rect class="c3" x="110" y="262" width="120" height="86"/>
+    <polygon class="c4" points="92,266 170,200 248,266"/>
+    <rect class="c0" x="158" y="302" width="28" height="46"/>
+    <rect class="c0" x="190" y="282" width="26" height="22"/>
+    <rect class="c3" x="404" y="282" width="14" height="66"/>
+    <circle class="c1" cx="411" cy="262" r="38"/>
+    <circle class="c4" cx="428" cy="250" r="14"/>
+    <rect class="c1" x="0" y="348" width="600" height="52"/>
+  </svg>`,
+  // natureza-morta com vaso
+  `<svg viewBox="0 0 600 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Vaso com flores">
+    <rect class="c0" width="600" height="400"/>
+    <rect class="c1" x="60" y="48" width="170" height="170" rx="6"/>
+    <rect class="c4" x="72" y="60" width="146" height="146"/>
+    <rect class="c1" x="141" y="60" width="8" height="146"/>
+    <rect class="c1" x="72" y="129" width="146" height="8"/>
+    <rect class="c3" x="0" y="300" width="600" height="100"/>
+    <path class="c2" d="M360 312 C305 312 300 240 335 218 L335 190 L385 190 L385 218 C420 240 415 312 360 312Z"/>
+    <rect class="c1" x="356" y="120" width="6" height="74"/>
+    <rect class="c1" x="324" y="150" width="6" height="46" transform="rotate(-18 327 196)"/>
+    <rect class="c1" x="390" y="148" width="6" height="48" transform="rotate(20 393 196)"/>
+    <circle class="c4" cx="359" cy="112" r="28"/><circle class="c2" cx="359" cy="112" r="10"/>
+    <circle class="c4" cx="312" cy="140" r="22"/><circle class="c3" cx="312" cy="140" r="8"/>
+    <circle class="c4" cx="410" cy="138" r="22"/><circle class="c3" cx="410" cy="138" r="8"/>
+    <path class="c1" d="M470 308 a58 40 0 0 0 116 0Z"/>
+    <circle class="c4" cx="500" cy="300" r="17"/><circle class="c2" cx="535" cy="296" r="17"/><circle class="c4" cx="566" cy="302" r="14"/>
+  </svg>`,
+  // cidade
+  `<svg viewBox="0 0 600 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Cidade">
+    <rect class="c0" width="600" height="400"/>
+    <circle class="c4" cx="120" cy="100" r="52"/>
+    <rect class="c1" x="40" y="190" width="110" height="170"/>
+    <rect class="c2" x="170" y="130" width="100" height="230"/>
+    <rect class="c3" x="290" y="210" width="130" height="150"/>
+    <rect class="c1" x="440" y="150" width="110" height="210"/>
+    <g class="c0"><rect x="58" y="212" width="22" height="22"/><rect x="110" y="212" width="22" height="22"/><rect x="58" y="262" width="22" height="22"/><rect x="110" y="262" width="22" height="22"/>
+      <rect x="188" y="152" width="22" height="22"/><rect x="230" y="152" width="22" height="22"/><rect x="188" y="206" width="22" height="22"/><rect x="230" y="206" width="22" height="22"/><rect x="188" y="260" width="22" height="22"/><rect x="230" y="260" width="22" height="22"/>
+      <rect x="312" y="232" width="24" height="24"/><rect x="370" y="232" width="24" height="24"/>
+      <rect x="458" y="172" width="22" height="22"/><rect x="510" y="172" width="22" height="22"/><rect x="458" y="226" width="22" height="22"/><rect x="510" y="226" width="22" height="22"/></g>
+    <polygon class="c4" points="440,150 495,110 550,150"/>
+    <rect class="c3" x="0" y="360" width="600" height="40"/>
+    <rect class="c4" x="0" y="376" width="600" height="6"/>
+  </svg>`,
+];
+
+// ---------- Jogo ----------
+const tela = document.getElementById("tela");
+const sorteia = (n) => Math.floor(Math.random() * n);
+const embaralha = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
+const RODADAS = 5;
+let rodada, pontos, ordem, atual;
+
+function novaRodada() {
+  const certa = ordem[rodada];
+  // iscas: outras harmonias; para "complementar" e "tetrádica" não entram juntas, pois ambas têm pares de opostas
+  const iscas = embaralha(Object.keys(GERAR).filter((k) => k !== certa && !(certa === "complementar" && k === "tetradica") && !(certa === "tetradica" && k === "complementar"))).slice(0, 3);
+  const matizes = embaralha([0, 40, 80, 120, 160, 200, 240, 280, 320]).slice(0, 4).map((m) => m + sorteia(30));
+  const opcoes = embaralha([certa, ...iscas]).map((tipo, i) => ({ tipo, cores: GERAR[tipo](matizes[i]) }));
+  atual = { certa, opcoes, cena: CENAS[rodada % CENAS.length], escolhida: -1, confirmada: false };
+}
+
+function pinta(cores) {
+  const svg = tela.querySelector(".cena svg");
+  cores.forEach((c, i) => svg.style.setProperty(`--c${i}`, c));
+}
+
+function desenha() {
+  tela.innerHTML = `
+    <div class="topo"><span>Protótipo · paleta ao vivo</span><span>${rodada + 1} / ${RODADAS}</span></div>
+    <div class="nome">${NOMES[atual.certa]}</div>
+    <p class="dica">Passe o mouse sobre as paletas e veja a ilustração mudar. Escolha a que forma esta harmonia.</p>
+    <div class="cena">${atual.cena}</div>
+    <div class="paletas">${atual.opcoes.map((o, i) =>
+      `<button class="paleta" data-i="${i}" aria-label="Paleta ${i + 1}"><div class="faixa">${o.cores.map((c) => `<span style="background:${c}"></span>`).join("")}</div></button>`).join("")}</div>
+    <div class="acoes"><div class="retorno" id="retorno"></div><button class="btn" id="acao" disabled>Escolha uma paleta</button></div>`;
+  pinta(NEUTRO);
+
+  const botoes = [...tela.querySelectorAll(".paleta")];
+  const voltar = () => pinta(atual.escolhida >= 0 ? atual.opcoes[atual.escolhida].cores : NEUTRO);
+  botoes.forEach((b, i) => {
+    const ver = () => pinta(atual.opcoes[i].cores);
+    b.addEventListener("mouseenter", ver);
+    b.addEventListener("focus", ver);
+    b.addEventListener("mouseleave", voltar);
+    b.addEventListener("blur", voltar);
+    b.addEventListener("click", () => {
+      if (atual.confirmada) return;
+      atual.escolhida = i;
+      botoes.forEach((x, k) => x.classList.toggle("sel", k === i));
+      const acao = document.getElementById("acao");
+      acao.disabled = false; acao.textContent = "Confirmar";
+    });
+  });
+  document.getElementById("acao").addEventListener("click", () => {
+    if (!atual.confirmada) return confirmar(botoes);
+    if (++rodada < RODADAS) { novaRodada(); desenha(); } else fim();
+  });
+}
+
+function confirmar(botoes) {
+  atual.confirmada = true;
+  const acertou = atual.opcoes[atual.escolhida].tipo === atual.certa;
+  if (acertou) pontos++;
+  botoes.forEach((b, i) => {
+    b.classList.remove("sel");
+    if (atual.opcoes[i].tipo === atual.certa) b.classList.add("certa");
+    else if (i === atual.escolhida) b.classList.add("errada");
+  });
+  const r = document.getElementById("retorno");
+  r.className = "retorno " + (acertou ? "ok" : "erro");
+  r.textContent = acertou ? "Acertou!" : "Quase! A paleta certa está destacada em verde.";
+  document.getElementById("acao").textContent = rodada === RODADAS - 1 ? "Ver resultado" : "Próxima";
+}
+
+function fim() {
+  tela.innerHTML = `<div class="fim"><div class="topo" style="width:100%"><span>Protótipo · paleta ao vivo</span><span></span></div>
+    <div><div class="dica" style="margin:0 0 6px">Acertos</div><div class="grande">${pontos}<span style="font-size:.3em;color:var(--muted)">/${RODADAS}</span></div></div>
+    <button class="btn" id="de-novo">Jogar de novo</button></div>`;
+  document.getElementById("de-novo").addEventListener("click", comecar);
+}
+
+function comecar() {
+  rodada = 0; pontos = 0;
+  ordem = embaralha(Object.keys(GERAR));
+  novaRodada(); desenha();
+}
+comecar();
+</script>
+</body>
+</html>

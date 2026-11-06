@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Propostas de telas · Teoria das Cores</title>
+<style>
+  :root { --ink: #16181d; --muted: #7a7a72; --line: #dcd8cf; --ok: #2d6a4f; --bad: #b4452f; --bg: #f3f1ec; --sans: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e4e1d9; color: var(--ink); font-family: var(--sans); padding: 32px 16px 80px; }
+  .doc { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+  .intro h1 { margin: 0 0 6px; font-size: 1.8rem; letter-spacing: -.02em; }
+  .intro p { margin: 0; color: #55554f; line-height: 1.5; max-width: 760px; }
+  .bloco h2 { margin: 0 0 4px; font-size: 1.05rem; letter-spacing: -.01em; }
+  .bloco .nota { margin: 0 0 12px; color: #55554f; font-size: .9rem; line-height: 1.45; max-width: 820px; }
+  /* moldura de "tela" 16:10 */
+  .tela { position: relative; aspect-ratio: 16 / 10; background: var(--bg); border-radius: 10px; box-shadow: 0 1px 0 rgba(0,0,0,.05), 0 18px 40px rgba(0,0,0,.12); overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4% 5%; }
+  .tela.escura { background: #0e0f13; color: #fff; }
+  .marca { position: absolute; top: 3.5%; left: 3%; font: italic 900 1.15rem/.95 var(--sans); text-transform: uppercase; color: #b3afa6; }
+  .etapa { font-size: .68rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+  .titulo { margin: 0; font-size: 1.9rem; font-weight: 800; letter-spacing: -.02em; text-align: center; }
+  .contagem { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; background: conic-gradient(var(--ink) 70%, var(--line) 0); -webkit-mask: radial-gradient(circle, transparent 57%, #000 59%); }
+  .contagem-wrap { position: relative; width: 40px; height: 40px; display: grid; place-items: center; }
+  .contagem-wrap b { position: absolute; font-size: .9rem; }
+  .btn-palavra { font: 800 .8rem var(--sans); letter-spacing: .2em; text-transform: uppercase; }
+
+  /* tela 3 - como jogar */
+  .passos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3%; width: 100%; margin: 4% 0 3%; }
+  .passo { padding: 4% 6%; display: flex; flex-direction: column; gap: 10px; }
+  .passo .n { width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: .8rem; }
+  .passo h3 { margin: 0; font-size: 1.05rem; letter-spacing: -.01em; }
+  .passo p { margin: 0; font-size: .82rem; line-height: 1.4; color: #4c4c46; }
+  .mini-sliders { display: flex; flex-direction: column; gap: 7px; margin: 4px 0; }
+  .mini-sliders i { display: block; height: 7px; border-radius: 99px; position: relative; }
+  .mini-sliders i::after { content: ""; position: absolute; top: 50%; width: 13px; height: 13px; border-radius: 50%; background: #fff; border: 3px solid var(--ink); transform: translate(-50%, -50%); left: var(--x); }
+  .mini-harm { display: flex; gap: 8px; margin: 4px 0; }
+  .mini-harm svg { width: 34px; height: 34px; }
+  .mini-harm .r { fill: none; stroke: #c8c4ba; stroke-width: 3; } .mini-harm .l { fill: none; stroke: var(--ink); stroke-width: 2.6; } .mini-harm .p { fill: var(--ink); }
+  .mini-tempo { display: flex; align-items: center; gap: 10px; margin: 4px 0; font-size: .8rem; font-weight: 700; }
+
+  /* tela final do jogador */
+  .final { display: grid; grid-template-columns: auto minmax(0, 420px); justify-content: center; gap: 56px; width: 100%; align-items: center; }
+  .final > div:first-child { text-align: center; }
+  .final .nome { margin: 0; font-size: 1rem; font-weight: 700; color: var(--muted); }
+  .final .total { font-size: 5rem; font-weight: 900; letter-spacing: -.05em; line-height: 1; }
+  .final .total small { font-size: 1.2rem; color: var(--muted); font-weight: 700; letter-spacing: 0; }
+  .final .selo { display: inline-block; margin-top: 10px; padding: 6px 14px; border-radius: 99px; background: var(--ink); color: #fff; font-weight: 700; font-size: .8rem; }
+  .final .posicao { margin: 14px 0 0; font-size: .95rem; }
+  .fases { display: flex; flex-direction: column; gap: 7px; }
+  .fase { display: grid; grid-template-columns: 38px 1fr 64px 70px; gap: 10px; align-items: center; font-size: .78rem; }
+  .fase img { width: 38px; height: 38px; object-fit: cover; border-radius: 6px; }
+  .fase .barra { height: 7px; border-radius: 99px; background: var(--line); overflow: hidden; } .fase .barra b { display: block; height: 100%; background: var(--ink); }
+  .fase .h { font-weight: 700; } .fase .h.ok { color: var(--ok); } .fase .h.erro { color: var(--bad); }
+
+  /* telão */
+  .telao { display: grid; grid-template-columns: 1.4fr 1fr; gap: 5%; width: 100%; align-items: center; }
+  .telao h3 { margin: 0 0 4px; font-size: 2.2rem; letter-spacing: -.03em; }
+  .telao .sub { margin: 0 0 16px; color: #a3a6ad; font-size: .85rem; letter-spacing: .14em; text-transform: uppercase; }
+  .rank { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .rank li { display: grid; grid-template-columns: 34px 1fr 70px; align-items: center; padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,.06); font-size: .95rem; }
+  .rank li b { font-size: 1.05rem; } .rank li span:last-child { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .rank li.novo { background: linear-gradient(90deg, #fe2712, #fb9902, #fefe33, #66b032, #0247fe, #8601af); background-size: 300% 100%; color: #111; }
+  .lado-telao { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+  .qr { width: 150px; height: 150px; border-radius: 12px; background: #fff; display: grid; place-items: center; color: #111; font-size: .7rem; font-weight: 700; padding: 10px;
+        background-image: linear-gradient(90deg, #111 50%, transparent 0), linear-gradient(#111 50%, transparent 0); background-size: 18px 18px; background-blend-mode: difference; }
+  .lado-telao p { margin: 0; font-size: .9rem; color: #c9cbd0; line-height: 1.4; }
+  .roda-pq { width: 120px; aspect-ratio: 1; border-radius: 50%; background: conic-gradient(#fe2712, #fb9902, #fefe33, #66b032, #0247fe, #8601af, #fe2712); -webkit-mask: radial-gradient(circle, transparent 58%, #000 60%); }
+
+  /* telão claro */
+  .telao2 { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .recorde { display: flex; align-items: baseline; gap: 10px; padding: 8px 18px; border-radius: 99px; background: #fff; box-shadow: 0 0 0 1px var(--line); }
+  .recorde span { font-size: .7rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .recorde b { font-size: 1.5rem; letter-spacing: -.03em; } .recorde em { font-style: normal; font-size: .8rem; color: var(--muted); }
+  .rank2 { list-style: none; margin: 0; padding: 0; width: 100%; max-width: 760px; display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: column; grid-template-rows: repeat(10, auto); column-gap: 28px; row-gap: 3px; }
+  .rank2 li { display: grid; grid-template-columns: 28px 1fr 46px; align-items: center; padding: 4px 10px; border-radius: 6px; font-size: .82rem; }
+  .rank2 li:nth-child(-n+3) { font-weight: 800; }
+  .rank2 li span:last-child { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .rank2 li.novo { background: var(--ink); color: #fff; }
+  /* painel do moderador */
+  .painel { display: grid; grid-template-columns: 200px 1fr; width: 100%; height: 100%; gap: 0; background: #fff; border-radius: 10px; box-shadow: 0 0 0 1px var(--line); overflow: hidden; font-size: .82rem; }
+  .menu-lateral { background: #f6f4ef; border-right: 1px solid var(--line); padding: 18px 12px; display: flex; flex-direction: column; gap: 4px; }
+  .menu-lateral b { font-size: .95rem; margin: 0 8px 12px; }
+  .menu-lateral a { padding: 8px 10px; border-radius: 6px; color: var(--ink); text-decoration: none; }
+  .menu-lateral a.at { background: var(--ink); color: #fff; font-weight: 700; }
+  .conteudo { padding: 18px 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-content: start; overflow: hidden; }
+  .card { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .card h4 { margin: 0; font-size: .85rem; }
+  .card.largo { grid-column: 1 / -1; }
+  .linha { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .chave { width: 34px; height: 20px; border-radius: 99px; background: var(--line); position: relative; flex: none; }
+  .chave::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; }
+  .chave.on { background: var(--ok); } .chave.on::after { left: 17px; }
+  .num { border: 1px solid var(--line); border-radius: 6px; padding: 3px 10px; font-weight: 700; }
+  .thumbs { display: grid; grid-template-columns: repeat(12, 1fr); gap: 5px; }
+  .thumbs label { position: relative; } .thumbs img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 5px; display: block; }
+  .thumbs label.off img { opacity: .25; filter: grayscale(1); }
+  .thumbs label::after { content: "✓"; position: absolute; right: 2px; bottom: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--ok); color: #fff; font-size: 9px; display: grid; place-items: center; }
+  .thumbs label.off::after { content: ""; background: var(--line); }
+  .estacoes { display: flex; gap: 8px; } .estacoes span { padding: 4px 10px; border-radius: 99px; background: #e6f1ea; color: var(--ok); font-weight: 700; font-size: .72rem; }
+  .estacoes span.off { background: #f1efe9; color: var(--muted); }
+  .acoes { display: flex; gap: 8px; } .acoes span { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); font-weight: 700; font-size: .75rem; } .acoes span.perigo { color: var(--bad); border-color: #e7c6bd; }
+  .tabela-mini { display: flex; flex-direction: column; gap: 4px; }
+  .tabela-mini div { display: grid; grid-template-columns: 1fr 60px 60px; font-size: .75rem; } .tabela-mini div:first-child { color: var(--muted); font-weight: 700; font-size: .66rem; text-transform: uppercase; letter-spacing: .08em; }
+
+  /* arquitetura */
+  .arq { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .opcao { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 0 0 1px var(--line); font-size: .85rem; line-height: 1.45; }
+  .opcao h3 { margin: 0 0 6px; font-size: .95rem; }
+  .opcao.rec { box-shadow: 0 0 0 2px var(--ink); }
+  .opcao .tag { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 99px; background: var(--ink); color: #fff; font-size: .68rem; font-weight: 700; letter-spacing: .06em; }
+  .opcao ul { margin: 6px 0 0; padding-left: 18px; }
+  @media (max-width: 760px) { .passos, .final, .telao, .arq { grid-template-columns: 1fr; } .tela { aspect-ratio: auto; } .painel { grid-template-columns: 1fr; } .menu-lateral { display: none; } .conteudo { grid-template-columns: 1fr; } .thumbs { grid-template-columns: repeat(6, 1fr); } }
+</style>
+</head>
+<body>
+<div class="doc">
+  <header class="intro">
+    <h1>Propostas de telas</h1>
+    <p>Rascunhos para discutir antes de implementar: o fluxo completo do jogo (abertura → nome → <b>como jogar</b> → fases → <b>resultado final</b>), o <b>telão de ranking</b> e o <b>painel do moderador</b>. No fim, como os dados ficam no Firebase.</p>
+  </header>
+
+  <!-- TELA 3 -->
+  <section class="bloco">
+    <h2>Tela 3 · Como jogar</h2>
+    <p class="nota">Logo depois do nome. Três passos curtos com mini ilustrações (uma frase cada, para não virar leitura no evento). Passa sozinha em ~15 s ou ao tocar em “Começar”.</p>
+    <div class="tela">
+      <span class="marca">Mundo<br>Senai</span>
+      <p class="etapa">Como jogar</p>
+      <div class="passos">
+        <div class="passo">
+          <span class="n">1</span>
+          <div class="mini-sliders">
+            <i style="background:linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);--x:30%"></i>
+            <i style="background:linear-gradient(90deg,#ccc,#0247fe);--x:72%"></i>
+            <i style="background:linear-gradient(90deg,#000,#7aa6ff);--x:58%"></i>
+          </div>
+          <h3>Ajuste as cores</h3>
+          <p>Mexa em matiz, saturação e luminosidade até cada cor ficar igual à amostra.</p>
+        </div>
+        <div class="passo">
+          <span class="n">2</span>
+          <div class="mini-harm">
+            <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" class="r"/><polyline points="50,12 50,88" class="l"/><circle cx="50" cy="12" r="7" class="p"/><circle cx="50" cy="88" r="7" class="p"/></svg>
+            <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" class="r"/><polygon points="50,12 83,69 17,69" class="l"/><circle cx="50" cy="12" r="7" class="p"/><circle cx="83" cy="69" r="7" class="p"/><circle cx="17" cy="69" r="7" class="p"/></svg>
+            <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" class="r"/><polyline points="31,17 50,12 69,17" class="l"/><circle cx="31" cy="17" r="7" class="p"/><circle cx="50" cy="12" r="7" class="p"/><circle cx="69" cy="17" r="7" class="p"/></svg>
+          </div>
+          <h3>Identifique a harmonia</h3>
+          <p>Veja as cores da imagem e escolha a combinação: complementar, análoga, tríade…</p>
+        </div>
+        <div class="passo">
+          <span class="n">3</span>
+          <div class="mini-tempo"><span class="contagem-wrap"><span class="contagem"></span><b>8</b></span> Cada fase tem tempo</div>
+          <h3>Some pontos</h3>
+          <p>Quanto mais perto da cor e da harmonia certas, mais pontos — e seu nome vai para o ranking.</p>
+        </div>
+      </div>
+      <span class="btn-palavra">Começar</span>
+    </div>
+  </section>
+
+  <!-- TELA FINAL -->
+  <section class="bloco">
+    <h2>Tela final · Resultado do jogador</h2>
+    <p class="nota">Depois da última fase. Pontuação total (percepção de cor + harmonias), um título divertido, a posição na rodada e o resumo de cada fase. <b>As respostas certas não aparecem aqui</b>: só ✓ ou ✗, para não passar a resposta a quem ainda está jogando. Elas são reveladas quando o moderador encerra a rodada. Volta sozinha para a abertura em ~20 s.</p>
+    <div class="tela">
+      <span class="marca">Mundo<br>Senai</span>
+      <div class="final">
+        <div>
+          <p class="etapa">Resultado</p>
+          <p class="nome">Ana Clara</p>
+          <div class="total">412<small> / 500</small></div>
+          <span class="selo">Diretora de Arte</span>
+          <p class="posicao"><b>3º lugar</b> nesta rodada</p>
+        </div>
+        <div class="fases">
+          <p class="etapa" style="margin:0 0 2px">Suas fases</p>
+          <div class="fase"><img src="img/snoopy.jpg" alt=""><span class="barra"><b style="width:93%"></b></span><span>93% cor</span><span class="h ok">✓ harmonia</span></div>
+          <div class="fase"><img src="img/ninfeias.jpg" alt=""><span class="barra"><b style="width:71%"></b></span><span>71% cor</span><span class="h erro">✗ harmonia</span></div>
+          <div class="fase"><img src="img/lego.jpg" alt=""><span class="barra"><b style="width:88%"></b></span><span>88% cor</span><span class="h ok">✓ harmonia</span></div>
+          <div class="fase"><img src="img/perry.jpg" alt=""><span class="barra"><b style="width:64%"></b></span><span>64% cor</span><span class="h ok">✓ harmonia</span></div>
+          <div class="fase"><img src="img/capa-rita-lee.jpg" alt=""><span class="barra"><b style="width:79%"></b></span><span>79% cor</span><span class="h erro">✗ harmonia</span></div>
+          <p style="margin:6px 0 0;font-size:.75rem;color:var(--muted)">Respostas certas: reveladas no fim da rodada.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TELÃO -->
+  <section class="bloco">
+    <h2>Telão · Ranking da rodada</h2>
+    <p class="nota">Página só de exibição (TV ou projetor), tema claro e centralizada. Mostra os <b>20 primeiros da rodada atual</b> (não do histórico, já que visitantes vão e vêm) e, em destaque, o <b>recorde do evento</b> — que não é apagado ao começar uma nova rodada. Quem acabou de jogar aparece destacado por alguns segundos.</p>
+    <div class="tela">
+      <span class="marca">Mundo<br>Senai</span>
+      <div class="telao2">
+        <p class="etapa">Ranking · rodada da manhã · 47 jogadores</p>
+        <div class="recorde"><span>Recorde do evento</span><b>481</b><em>Beatriz F. · ontem, 15h</em></div>
+        <ol class="rank2"><li class=""><b>1</b><span>Pedro H.</span><span>468</span></li><li class=""><b>2</b><span>Marina S.</span><span>451</span></li><li class="novo"><b>3</b><span>Ana Clara · acabou de jogar!</span><span>412</span></li><li class=""><b>4</b><span>João V.</span><span>398</span></li><li class=""><b>5</b><span>Larissa M.</span><span>377</span></li><li class=""><b>6</b><span>Caio R.</span><span>365</span></li><li class=""><b>7</b><span>Bia T.</span><span>351</span></li><li class=""><b>8</b><span>Rafael O.</span><span>344</span></li><li class=""><b>9</b><span>Duda L.</span><span>330</span></li><li class=""><b>10</b><span>Gabriel P.</span><span>322</span></li><li class=""><b>11</b><span>Sofia A.</span><span>315</span></li><li class=""><b>12</b><span>Enzo K.</span><span>301</span></li><li class=""><b>13</b><span>Lívia R.</span><span>296</span></li><li class=""><b>14</b><span>Davi M.</span><span>288</span></li><li class=""><b>15</b><span>Helena C.</span><span>275</span></li><li class=""><b>16</b><span>Miguel F.</span><span>262</span></li><li class=""><b>17</b><span>Alice N.</span><span>250</span></li><li class=""><b>18</b><span>Theo B.</span><span>241</span></li><li class=""><b>19</b><span>Laura G.</span><span>233</span></li><li class=""><b>20</b><span>Arthur S.</span><span>219</span></li></ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAINEL DO MODERADOR -->
+  <section class="bloco">
+    <h2>Painel do moderador</h2>
+    <p class="nota">Protegido por PIN. Controla as regras sem mexer no código: quantas fases por pessoa e quais entram no sorteio, tempos, modo simulação (só aqui), rodadas (encerrar a rodada revela as respostas e começa outra; o recorde do evento é mantido), exportar e o estado das estações.</p>
+    <div class="tela" style="padding:2.5%">
+      <div class="painel">
+        <nav class="menu-lateral">
+          <b>Moderador</b>
+          <a class="at">Partida</a><a>Fases</a><a>Rodadas</a><a>Estações</a><a>Relatórios</a><a>Sair</a>
+        </nav>
+        <div class="conteudo">
+          <div class="card">
+            <h4>Regras da partida</h4>
+            <div class="linha"><span>Fases por pessoa</span><span class="num">5</span></div>
+            <div class="linha"><span>Tempo no resultado</span><span class="num">8 s</span></div>
+            <div class="linha"><span>Tempo após a resposta</span><span class="num">6 s</span></div>
+            <div class="linha"><span>Abandono (volta ao início)</span><span class="num">90 s</span></div>
+          </div>
+          <div class="card">
+            <h4>Exibição</h4>
+            <div class="linha"><span>Modo simulação (demonstração)</span><span class="chave on"></span></div>
+            <div class="linha"><span>Consultar círculo cromático</span><span class="chave on"></span></div>
+            <div class="linha"><span>Revelar respostas ao encerrar a rodada</span><span class="chave on"></span></div>
+            <div class="linha"><span>Rodada atual</span><span class="num">Manhã</span></div>
+          </div>
+          <div class="card largo">
+            <h4>Fases no sorteio (9 de 12)</h4>
+            <div class="thumbs">
+              <label><img src="img/paisagem-neve.webp" alt=""></label><label><img src="img/casa-vermelha.webp" alt=""></label><label><img src="img/ninfeias.jpg" alt=""></label><label><img src="img/capa-rita-lee.jpg" alt=""></label>
+              <label class="off"><img src="img/cacto.svg" alt=""></label><label><img src="img/pooh.jpg" alt=""></label><label><img src="img/burger-king.jpg" alt=""></label><label><img src="img/snoopy.jpg" alt=""></label>
+              <label><img src="img/perry.jpg" alt=""></label><label class="off"><img src="img/victorias-secret.jpg" alt=""></label><label><img src="img/menina-afega.jpg" alt=""></label><label class="off"><img src="img/lego.jpg" alt=""></label>
+            </div>
+          </div>
+          <div class="card">
+            <h4>Estações</h4>
+            <div class="estacoes"><span>PC 1 · jogando</span><span>PC 2 · demo</span><span class="off">PC 3 · offline</span></div>
+            <div class="acoes"><span>Abrir telão</span></div>
+          </div>
+          <div class="card">
+            <h4>Rodada e relatórios</h4>
+            <div class="tabela-mini"><div><span>Fase</span><span>Acerto</span><span>Média cor</span></div><div><span>Ninfeias</span><span>38%</span><span>72%</span></div><div><span>Snoopy</span><span>81%</span><span>88%</span></div></div>
+            <div class="acoes"><span>Exportar CSV</span><span class="perigo">Encerrar rodada</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BANCO DE DADOS -->
+  <section class="bloco">
+    <h2>Banco de dados · Firebase (escolhido)</h2>
+    <p class="nota">Cloud Firestore guarda tudo num lugar só: todos os PCs, o telão e o painel leem e gravam em tempo real. O jogo continua abrindo sem servidor; só precisa de internet no evento.</p>
+    <div class="arq">
+      <div class="opcao"><h3>config</h3><p>Regras da partida definidas pelo moderador: fases por pessoa, fases ativas, tempos, modo simulação, rodada atual.</p></div>
+      <div class="opcao"><h3>rodadas / partidas</h3><p>Cada partida: nome, rodada, estação, pontos por fase (cor e harmonia), total e horário. O telão lê os 20 melhores da rodada atual.</p></div>
+      <div class="opcao"><h3>recorde</h3><p>Melhor pontuação do evento, separada das rodadas: não é apagada ao encerrar uma rodada.</p></div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

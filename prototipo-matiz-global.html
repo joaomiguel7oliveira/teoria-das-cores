@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Protótipo · Girar todas as cores</title>
+<style>
+  :root { --ink: #16181d; --muted: #7a7a72; --line: #dcd8cf; --ok: #2d6a4f; --bad: #b4452f; --bg: #f3f1ec; --sans: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  body { height: 100dvh; background: var(--bg); color: var(--ink); font-family: var(--sans); display: flex; flex-direction: column; align-items: center; padding: clamp(10px, 2.4vh, 22px) 16px; }
+  .coluna { width: 100%; max-width: 860px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .topo { display: flex; justify-content: space-between; font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  .pergunta { text-align: center; font-size: clamp(1.4rem, 5vh, 2.4rem); font-weight: 700; letter-spacing: -.035em; line-height: 1.05; margin: clamp(6px, 2vh, 16px) 0 clamp(8px, 2vh, 14px); }
+  .paleta { display: flex; justify-content: center; gap: 12px; margin-bottom: clamp(8px, 2vh, 16px); }
+  .paleta span { width: clamp(38px, 8vh, 60px); height: clamp(38px, 8vh, 60px); border-radius: 50%; box-shadow: 0 0 0 3px #fff, 0 0 0 4.5px var(--ink); }
+  .imagem { flex: 1; min-height: 0; display: flex; justify-content: center; }
+  .imagem img { height: 100%; width: auto; max-width: 100%; object-fit: contain; border-radius: 6px; box-shadow: 0 0 0 1px var(--line); }
+
+  /* slider livre: linha preta e botão branco (as cores ficam todas na imagem) */
+  .trilho { position: relative; height: 30px; width: min(100%, 560px); margin: clamp(14px, 3vh, 26px) auto 56px; }
+  .barra { position: absolute; left: 15px; right: 15px; top: 14px; height: 2px; border-radius: 99px; background: var(--ink); }
+  input[type=range] { -webkit-appearance: none; appearance: none; background: transparent; outline: none; position: absolute; inset: 0; width: 100%; height: 30px; margin: 0; }
+  input[type=range]::-webkit-slider-runnable-track { background: transparent; height: 30px; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; border-radius: 50%; background: #fff; border: 4px solid var(--ink); cursor: grab; }
+  input[type=range]::-moz-range-track { background: transparent; height: 30px; }
+  input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 4px solid var(--ink); cursor: grab; }
+  .alvo { position: absolute; top: -4px; width: 0; pointer-events: none; display: none; }
+  .alvo.on { display: block; }
+  .alvo::before { content: ""; position: absolute; left: -2px; top: 0; width: 4px; height: 46px; background: var(--ink); border-radius: 2px; }
+  .alvo span { position: absolute; left: 50%; top: 50px; transform: translateX(-50%); font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; white-space: nowrap; }
+
+  .acoes { display: flex; flex-direction: column; align-items: center; gap: 8px; min-height: 84px; }
+  .retorno { font-size: .92rem; text-align: center; min-height: 2.6em; max-width: 560px; }
+  .retorno.ok { color: var(--ok); } .retorno.perto { color: #8a6a1f; } .retorno.erro { color: var(--bad); }
+  .btn { width: 250px; background: var(--ink); color: #fff; border: 0; border-radius: 4px; padding: 12px 24px; font: 700 .72rem var(--sans); letter-spacing: .18em; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+  .btn.sec { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+</style>
+</head>
+<body>
+<div class="coluna">
+  <div class="topo"><span>Protótipo · girar todas as cores</span><span id="nota"></span></div>
+  <div class="pergunta">Gire as cores até a imagem combinar com a paleta</div>
+  <div class="paleta" id="paleta" aria-label="Paleta alvo"></div>
+  <div class="imagem"><img id="foto" alt="Imagem cujas cores giram juntas"></div>
+  <div class="trilho">
+    <div class="barra"></div>
+    <input type="range" id="slider" min="0" max="360" step="1" value="0" aria-label="Giro das cores">
+    <div class="alvo" id="alvo"><span>ponto certo</span></div>
+  </div>
+  <div class="acoes">
+    <div class="retorno" id="retorno">Arraste o slider: todas as cores da imagem mudam juntas.</div>
+    <button class="btn" id="confirmar">Confirmar</button>
+  </div>
+</div>
+
+<script>
+const FOTO = "imagens-todas/358d8be1362c3873809654510bb1ff31.jpg";
+const ZERO_EM = 90, NOTA_ACERTO = 80, NOTA_PERTO = 50;   // a nota cai de forma contínua: 0° = 100, 90° ou mais = 0
+
+const foto = document.getElementById("foto");
+const slider = document.getElementById("slider");
+const retorno = document.getElementById("retorno");
+const botao = document.getElementById("confirmar");
+const alvoEl = document.getElementById("alvo");
+let paletaBase = [], T = 0, confirmada = false;
+
+const distAng = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+
+// ---------- o mesmo giro de cor que o navegador aplica em filter: hue-rotate() ----------
+function girar([r, g, b], graus) {
+  const a = graus * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+  const m = [
+    [0.213 + c * 0.787 - s * 0.213, 0.715 - c * 0.715 - s * 0.715, 0.072 - c * 0.072 + s * 0.928],
+    [0.213 - c * 0.213 + s * 0.143, 0.715 + c * 0.285 + s * 0.140, 0.072 - c * 0.072 - s * 0.283],
+    [0.213 - c * 0.213 - s * 0.787, 0.715 - c * 0.715 + s * 0.715, 0.072 + c * 0.928 + s * 0.072],
+  ];
+  return m.map((l) => Math.max(0, Math.min(255, Math.round(l[0] * r + l[1] * g + l[2] * b))));
+}
+function rgbParaHsl([r, g, b]) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min, l = (max + min) / 2;
+  if (!d) return [0, 0, l];
+  const s = d / (1 - Math.abs(2 * l - 1));
+  const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [(h * 60 + 360) % 360, s, l];
+}
+
+// ---------- paleta da imagem: cores principais (matizes bem diferentes) + o tom claro de fundo ----------
+function extrairPaleta(img) {
+  const k = 110 / Math.max(img.naturalWidth, img.naturalHeight);
+  const cv = document.createElement("canvas"); cv.width = Math.round(img.naturalWidth * k); cv.height = Math.round(img.naturalHeight * k);
+  const ctx = cv.getContext("2d", { willReadFrequently: true }); ctx.drawImage(img, 0, 0, cv.width, cv.height);
+  const d = ctx.getImageData(0, 0, cv.width, cv.height).data;
+  const faixas = Array.from({ length: 12 }, () => ({ n: 0, r: 0, g: 0, b: 0 })); const claro = { n: 0, r: 0, g: 0, b: 0 }; let total = 0;
+  for (let p = 0; p < d.length; p += 4) {
+    const [h, s, l] = rgbParaHsl([d[p], d[p + 1], d[p + 2]]); total++;
+    if (s > 0.35 && l > 0.15 && l < 0.85) { const f = faixas[Math.floor(h / 30) % 12]; f.n++; f.r += d[p]; f.g += d[p + 1]; f.b += d[p + 2]; }
+    else if (s < 0.3 && l > 0.78) { claro.n++; claro.r += d[p]; claro.g += d[p + 1]; claro.b += d[p + 2]; }
+  }
+  const escolhidas = [];
+  faixas.map((f, i) => ({ ...f, centro: i * 30 + 15 })).sort((a, b) => b.n - a.n).forEach((f) => {
+    if (escolhidas.length < 3 && f.n > total * 0.03 && escolhidas.every((e) => distAng(e.centro, f.centro) >= 40)) escolhidas.push(f);
+  });
+  const cores = escolhidas.map((f) => [Math.round(f.r / f.n), Math.round(f.g / f.n), Math.round(f.b / f.n)]);
+  if (claro.n > total * 0.03) cores.push([Math.round(claro.r / claro.n), Math.round(claro.g / claro.n), Math.round(claro.b / claro.n)]);
+  return cores;
+}
+
+// ---------- rodada: a paleta alvo é a paleta da imagem girada em T graus; a imagem começa girada longe de T ----------
+function novaRodada() {
+  confirmada = false;
+  T = Math.floor(Math.random() * 360);
+  const inicio = Math.round((T + 90 + Math.random() * 180) % 360);
+  document.getElementById("paleta").innerHTML = paletaBase.map((c) => { const g = girar(c, T); return `<span style="background:rgb(${g.join(",")})"></span>`; }).join("");
+  slider.value = inicio; aplicar(inicio);
+  alvoEl.classList.remove("on");
+  document.getElementById("nota").textContent = "";
+  retorno.className = "retorno"; retorno.textContent = "Arraste o slider: todas as cores da imagem mudam juntas.";
+  botao.textContent = "Confirmar"; botao.classList.remove("sec");
+}
+function aplicar(graus) { foto.style.filter = `hue-rotate(${graus}deg)`; }
+
+function confirmar() {
+  confirmada = true;
+  const dist = distAng(+slider.value, T);
+  const nota = Math.max(0, Math.round(100 * (1 - dist / ZERO_EM)));
+  const cls = nota >= NOTA_ACERTO ? "ok" : nota >= NOTA_PERTO ? "perto" : "erro";
+  const msg = cls === "ok" ? "Acertou! A imagem combina com a paleta." : cls === "perto" ? "Quase! Falta um pouco para as cores encaixarem." : "Ainda não. Compare as cores da imagem com a paleta e tente de novo.";
+  retorno.className = "retorno " + cls; retorno.textContent = `${msg} Diferença: ${Math.round(dist)}°.`;
+  document.getElementById("nota").textContent = nota + " / 100";
+  alvoEl.style.left = `calc(15px + (100% - 30px) * ${T / 360})`; alvoEl.classList.add("on");
+  botao.textContent = "Nova rodada"; botao.classList.add("sec");
+}
+
+slider.addEventListener("input", () => aplicar(+slider.value));
+botao.addEventListener("click", () => (confirmada ? novaRodada() : confirmar()));
+foto.onload = () => { paletaBase = extrairPaleta(foto); novaRodada(); };
+foto.src = FOTO;
+</script>
+</body>
+</html>

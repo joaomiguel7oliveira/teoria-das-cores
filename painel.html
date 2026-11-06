@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<script>
+// tema do painel (claro, escuro ou o do sistema), guardado neste navegador; aplicado antes de desenhar para não piscar
+function aplicarTema(t) {
+  const escuro = t === "escuro" || (t === "sistema" && matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.dataset.tema = escuro ? "escuro" : "claro";
+  document.querySelectorAll(".tema button").forEach((b) => b.classList.toggle("ativo", b.dataset.tema === t));
+}
+const temaSalvo = () => { try { return localStorage.getItem("tema_painel") || "claro"; } catch { return "claro"; } };
+aplicarTema(temaSalvo());
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => aplicarTema(temaSalvo()));
+document.addEventListener("click", (e) => { const b = e.target.closest(".tema button"); if (!b) return; try { localStorage.setItem("tema_painel", b.dataset.tema); } catch {} aplicarTema(b.dataset.tema); });
+document.addEventListener("DOMContentLoaded", () => aplicarTema(temaSalvo()));
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel do moderador · Teoria das Cores</title>
+<style>
+  :root { --ink: #16181d; --muted: #7a7a72; --line: #dcd8cf; --ok: #2d6a4f; --bad: #b4452f; --bg: #f3f1ec; --roxo: #b5179e; --card: #fff; --campo: #fff; --linha-fina: #efece5; --realce: #faf8f3; --chip: #efece5; --tinta-btn: #fff; --sans: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 28px; background: var(--card); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; }
+  header h1 { margin: 0; font-size: 1.1rem; } header h1 span { color: var(--roxo); }
+  header nav { display: flex; gap: 14px; align-items: center; font-size: .85rem; }
+  a { color: var(--ink); }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 28px 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .card { background: var(--card); border-radius: 12px; box-shadow: 0 0 0 1px var(--line); padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .card.largo { grid-column: 1 / -1; }
+  .card h2 { margin: 0; font-size: .95rem; }
+  .card .dica { margin: -6px 0 0; font-size: .8rem; color: var(--muted); }
+  .linha { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  input[type=number] { width: 80px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; font: inherit; text-align: right; background: var(--campo); color: var(--ink); }
+  input[type=email], input[type=password] { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font: inherit; background: var(--campo); color: var(--ink); }
+  .chave { position: relative; width: 42px; height: 24px; flex: none; } .chave input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; z-index: 1; }
+  .chave span { position: absolute; inset: 0; border-radius: 99px; background: var(--line); transition: background .2s; }
+  .chave span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .2s; }
+  .chave input:checked + span { background: var(--ok); } .chave input:checked + span::after { left: 21px; }
+  .btn { border: 0; border-radius: 8px; padding: 10px 16px; font: 700 .85rem var(--sans); cursor: pointer; background: var(--ink); color: var(--tinta-btn); }
+  .btn.sec { background: var(--card); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+  .btn.perigo { background: var(--bad); color: #fff; }
+  .acoes { display: flex; gap: 10px; flex-wrap: wrap; }
+  .thumbs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+  .thumbs label { position: relative; cursor: pointer; font-size: .75rem; text-align: center; display: flex; flex-direction: column; gap: 4px; }
+  .thumbs img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; box-shadow: 0 0 0 1px var(--line); transition: opacity .2s, filter .2s; }
+  .thumbs input { position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; accent-color: var(--ok); }
+  .thumbs input:not(:checked) ~ img { opacity: .3; filter: grayscale(1); }
+  .grande { font-size: 1.6rem; font-weight: 900; letter-spacing: -.02em; }
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  th { text-align: left; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 6px 4px; border-bottom: 1px solid var(--line); }
+  td { padding: 7px 4px; border-bottom: 1px solid var(--linha-fina); }
+  td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .status { font-size: .8rem; color: var(--muted); min-height: 1.2em; }
+  .status.ok { color: var(--ok); } .status.erro { color: var(--bad); }
+  .x { border: 0; background: none; color: var(--muted); cursor: pointer; font: 700 1rem var(--sans); padding: 2px 8px; border-radius: 6px; }
+  .x:hover { color: #fff; background: var(--bad); }
+  .lnk { border: 0; background: none; padding: 0; font: inherit; color: var(--ink); text-decoration: underline; cursor: pointer; }
+  tr.aberta > td { background: var(--realce); }
+  tr.detalhe > td { background: var(--realce); padding: 4px 16px 14px; }
+  .alerta { padding: 10px 14px; border-radius: 8px; background: #fbe9e5; color: var(--bad); font-weight: 700; font-size: .85rem; }
+  .st { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: .75rem; font-weight: 700; background: var(--chip); color: var(--muted); }
+  .st.jogando { background: #e6f0fb; color: #1f5fa8; } .st.concluiu { background: #e5f2ea; color: var(--ok); } .st.demo { background: #f6e6f3; color: var(--roxo); } .st.off { background: #f3f1ec; color: #b3afa6; }
+  .btn:disabled { opacity: .4; cursor: default; }
+  .rolagem { max-height: 340px; overflow: auto; }
+  header nav a.btn { text-decoration: none; padding: 8px 14px; }
+  #login { max-width: 380px; margin: 12vh auto; }
+  [hidden] { display: none !important; }
+  /* tema escuro (botão no topo: Claro · Escuro · Sistema; guardado neste navegador) */
+  html[data-tema="escuro"] { color-scheme: dark; --ink: #ecebe6; --muted: #9b988f; --line: #33353d; --bg: #111216; --card: #1b1d23; --campo: #24262d; --linha-fina: #26282f; --realce: #22242b; --chip: #2a2c33; --tinta-btn: #111216; --ok: #4fae7f; --bad: #e0694f; --roxo: #e05cc7; }
+  html[data-tema="escuro"] .alerta { background: #3a1f1a; }
+  html[data-tema="escuro"] .st.jogando { background: #1d2f45; color: #8fbdf0; } html[data-tema="escuro"] .st.concluiu { background: #1d3a2b; }
+  html[data-tema="escuro"] .st.demo { background: #3a1f35; } html[data-tema="escuro"] .st.off { background: #23252b; color: #6f6c66; }
+  html[data-tema="escuro"] .thumbs input:not(:checked) ~ img { opacity: .22; }
+  .tema { display: inline-flex; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
+  .tema button { border: 0; background: none; color: var(--muted); font: 600 .78rem var(--sans); padding: 7px 10px; cursor: pointer; }
+  .tema button.ativo { background: var(--ink); color: var(--tinta-btn); }
+  @media (max-width: 800px) { main { grid-template-columns: 1fr; } .thumbs { grid-template-columns: repeat(3, 1fr); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Teoria das Cores · <span>Painel do moderador</span></h1>
+  <nav><a href="telao.html" target="_blank">Abrir telão</a><a href="inicio.html" target="_blank">Abrir jogo</a><a class="btn sec" href="inicio.html#demo" target="_blank" title="Abre uma guia nova com o jogo jogando sozinho (para o estande)">Abrir demonstração</a><span class="tema" role="group" aria-label="Tema do painel"><button data-tema="claro">Claro</button><button data-tema="escuro">Escuro</button><button data-tema="sistema">Sistema</button></span><button class="btn sec" id="sair" hidden>Sair</button></nav>
+</header>
+
+<!-- login (Firebase Authentication: e-mail e senha cadastrados no console do Firebase) -->
+<section class="card" id="login" hidden>
+  <h2>Entrar</h2>
+  <p class="dica">Use o e-mail e a senha do moderador.</p>
+  <input type="email" id="email" placeholder="E-mail" autocomplete="username">
+  <input type="password" id="senha" placeholder="Senha" autocomplete="current-password">
+  <button class="btn" id="entrar">Entrar</button>
+  <p class="status" id="status-login"></p>
+</section>
+
+<main id="painel" hidden>
+  <section class="card">
+    <h2>Rodada atual</h2>
+    <div class="grande" id="rodada-nome">—</div>
+    <div class="linha"><span>Jogadores nesta rodada</span><b id="rodada-qtd">0</b></div>
+    <div class="linha"><span>Recorde do evento</span><b id="recorde">—</b></div>
+    <p class="dica">Durante a rodada, o telão mostra quem está jogando e quem já concluiu. <b>Encerrar</b> mostra no telão o ranking final e as respostas certas. <b>Nova rodada</b> limpa o telão para a próxima turma. Partidas antigas e recorde ficam guardados.</p>
+    <div class="acoes"><button class="btn perigo" id="encerrar">Encerrar rodada</button><button class="btn" id="nova-rodada">Começar nova rodada</button><button class="btn sec" id="csv">Exportar CSV da rodada</button><button class="btn sec" id="apagar-recorde">Apagar recorde</button></div>
+    <p class="status" id="status-rodada"></p>
+  </section>
+
+  <section class="card">
+    <h2>Regras da partida</h2>
+    <div class="linha"><span>Sortear a ordem das imagens<br><small style="color:var(--muted)">Todos jogam as mesmas imagens; ligado, cada um numa ordem (o colega ao lado não está na mesma)</small></span><label class="chave"><input type="checkbox" id="sortear"><span></span></label></div>
+    <div class="linha"><span>Limite para ajustar as cores (s)<br><small style="color:var(--muted)">0 = sem limite; ao zerar, confirma como está</small></span><input type="number" id="tempoAjuste" min="0" max="600"></div>
+    <div class="linha"><span>Limite para a harmonia (s)<br><small style="color:var(--muted)">0 = sem limite; sem resposta conta como erro</small></span><input type="number" id="tempoHarmonia" min="0" max="600"></div>
+    <div class="linha"><span>Tempo do "como jogar" (s)</span><input type="number" id="tempoComoJogar" min="3" max="60"></div>
+    <div class="linha"><span>Tempo no resultado da cor (s)</span><input type="number" id="tempoResultado" min="3" max="60"></div>
+    <div class="linha"><span>Tempo após a resposta (s)</span><input type="number" id="tempoCombinacao" min="2" max="60"></div>
+    <div class="linha"><span>Tempo na tela final (s)<br><small style="color:var(--muted)">0 = fica até tocarem em "Próximo jogador"</small></span><input type="number" id="tempoFinal" min="0" max="600"></div>
+    <div class="linha"><span>Abandono: volta ao início após (s)</span><input type="number" id="tempoAbandono" min="20" max="600"></div>
+    <div class="linha"><span>Ranking ao vivo com pontos<br><small style="color:var(--muted)">Desligado: durante a rodada o telão mostra só os nomes; pontos só ao encerrar</small></span><label class="chave"><input type="checkbox" id="aoVivoPontos"><span></span></label></div>
+    <div class="linha"><span>Nota de 0 a 100<br><small style="color:var(--muted)">Acertar tudo vale 100, com qualquer número de fases. Só muda o que aparece nas telas; o banco guarda os pontos reais</small></span><label class="chave"><input type="checkbox" id="nota100"><span></span></label></div>
+    <div class="linha"><span>Sons no jogo<br><small style="color:var(--muted)">Acerto, erro, últimos 5 s do tempo e fanfarra no fim. A demonstração fica sem som.</small></span><label class="chave"><input type="checkbox" id="sons"><span></span></label></div>
+    <div class="linha"><span>Botão "consultar círculo cromático"</span><label class="chave"><input type="checkbox" id="circulo"><span></span></label></div>
+  </section>
+
+  <section class="card largo">
+    <h2>Fases no jogo · <span id="qtd-fases" style="color:var(--roxo)">0</span></h2>
+    <p class="dica">Clique nas imagens para escolher as fases. Todos os jogadores jogam <b>todas as marcadas</b> (as mesmas imagens para todos, para o jogo ser justo). A quantidade de fases é o número de marcadas.</p>
+    <div class="thumbs" id="fases"></div>
+    <div class="acoes"><button class="btn" id="salvar">Salvar regras</button></div>
+    <p class="status" id="status-regras"></p>
+  </section>
+
+  <section class="card largo">
+    <h2>Estações (PCs do jogo)</h2>
+    <p class="dica">Cada PC aparece aqui ao abrir o jogo. <b>Fila</b> = partidas que não foram enviadas por falta de internet (o PC reenvia sozinho a cada 2 min). Sem sinal há mais de 5 min = desligado ou sem internet.</p>
+    <div id="alerta-fila" class="alerta" hidden></div>
+    <table><thead><tr><th>Estação</th><th>Status</th><th>Jogador</th><th>Fila</th><th>Último sinal</th><th></th></tr></thead><tbody id="estacoes"></tbody></table>
+  </section>
+
+  <section class="card largo">
+    <h2>Jogadores da rodada atual</h2>
+    <p class="dica">Use o ✕ para tirar do ranking um nome impróprio ou uma partida de teste. A partida é apagada de vez.</p>
+    <div class="rolagem"><table><thead><tr><th>#</th><th>Nome</th><th>Pontos</th><th>Fases</th><th></th></tr></thead><tbody id="jogadores"></tbody></table></div>
+  </section>
+
+  <section class="card largo">
+    <h2>Desempenho por fase (rodada atual)</h2>
+    <table><thead><tr><th>Fase</th><th>Jogadas</th><th>Acerto da harmonia</th><th>Média da cor</th></tr></thead><tbody id="estatisticas"></tbody></table>
+  </section>
+
+  <section class="card largo">
+    <h2>Histórico de rodadas</h2>
+    <p class="dica">Todas as rodadas do evento ficam guardadas no banco, cada uma com as suas partidas. Ao encerrar, a rodada também guarda um resumo.</p>
+    <div class="acoes"><button class="btn sec" id="hist-atualizar">Atualizar</button><button class="btn sec" id="hist-csv">Exportar tudo (CSV)</button></div>
+    <table><thead><tr><th>Rodada</th><th>Início</th><th>Fim</th><th>Jogadores</th><th>Melhor</th><th>Média</th><th></th></tr></thead><tbody id="historico"></tbody></table>
+    <p class="status" id="status-hist"></p>
+  </section>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="banco.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const status = (id, txt, tipo = "") => { const el = $(id); el.textContent = txt; el.className = "status " + tipo; };
+const NUMEROS = ["tempoComoJogar", "tempoResultado", "tempoCombinacao", "tempoAbandono"];
+let config = null, partidas = [], pararRodada = () => {}, rodadaOuvida = null;
+
+// ---------- login ----------
+Banco.aoMudarLogin((usuario) => {
+  $("login").hidden = !!usuario; $("painel").hidden = !usuario; $("sair").hidden = !usuario;
+  if (usuario) iniciar();
+});
+$("entrar").addEventListener("click", async () => {
+  status("status-login", "Entrando…");
+  try { await Banco.entrar($("email").value.trim(), $("senha").value); status("status-login", ""); }
+  catch (e) { status("status-login", "E-mail ou senha inválidos.", "erro"); }
+});
+$("senha").addEventListener("keydown", (e) => { if (e.key === "Enter") $("entrar").click(); });
+$("sair").addEventListener("click", () => Banco.sair());
+
+// ---------- painel ----------
+let iniciado = false;
+function iniciar() {
+  if (iniciado) return; iniciado = true;
+  $("fases").innerHTML = Object.entries(FASES_DO_JOGO).map(([id, f]) =>
+    `<label><input type="checkbox" value="${id}"><img src="${f.img}" alt="">${f.nome}</label>`).join("");
+  Banco.ouvirConfig((cfg) => {
+    const primeira = !config; config = cfg;
+    if (primeira) preencher(cfg);
+    $("rodada-nome").textContent = cfg.rodada ? cfg.rodada.nome + (cfg.rodada.encerrada ? " · encerrada" : "") : "Nenhuma rodada";
+    $("encerrar").disabled = !cfg.rodada?.id || !!cfg.rodada.encerrada;
+    if (cfg.rodada?.id !== rodadaOuvida) {
+      rodadaOuvida = cfg.rodada?.id || null; pararRodada();
+      pararRodada = Banco.ouvirRodada(rodadaOuvida, (lista) => { partidas = lista; $("rodada-qtd").textContent = lista.length; estatisticas(); listarJogadores(); });
+    }
+  });
+  carregarHistorico();
+  Banco.ouvirEstacoes((lista) => { estacoes = lista; desenharEstacoes(); });
+  setInterval(desenharEstacoes, 30000);   // "último sinal" envelhece mesmo sem novidade
+  Banco.ouvirRecorde((r) => { $("recorde").textContent = r ? `${pontos(r)} · ${r.nome}` : "—"; });
+}
+function contarFases() {
+  const n = document.querySelectorAll("#fases input:checked").length;
+  $("qtd-fases").textContent = `${n} ${n === 1 ? "fase" : "fases"} por jogador`;
+}
+document.addEventListener("change", (e) => { if (e.target.closest("#fases")) contarFases(); });
+function preencher(cfg) {
+  NUMEROS.forEach((k) => ($(k).value = cfg[k]));
+  $("sortear").checked = cfg.sortear !== false; $("tempoAjuste").value = cfg.tempoAjuste || 0; $("tempoHarmonia").value = cfg.tempoHarmonia || 0; $("tempoFinal").value = cfg.tempoFinal ?? 20;
+  $("aoVivoPontos").checked = cfg.telaAoVivo !== "c"; $("sons").checked = cfg.sons === true; $("nota100").checked = cfg.nota100 === true;
+  $("circulo").checked = cfg.circulo !== false;
+  document.querySelectorAll("#fases input").forEach((i) => (i.checked = (cfg.fasesAtivas || []).includes(i.value)));
+  contarFases();
+}
+$("salvar").addEventListener("click", async () => {
+  const ativas = [...document.querySelectorAll("#fases input:checked")].map((i) => i.value);
+  if (!ativas.length) return status("status-regras", "Marque pelo menos uma fase.", "erro");
+  const limite = (id) => Math.max(0, Math.min(600, parseInt($(id).value, 10) || 0));
+  const novo = { nota100: $("nota100").checked, sons: $("sons").checked, telaAoVivo: $("aoVivoPontos").checked ? "b" : "c", fasesAtivas: ativas, fasesPorPessoa: ativas.length, sortear: $("sortear").checked, tempoAjuste: limite("tempoAjuste"), tempoHarmonia: limite("tempoHarmonia"), tempoFinal: limite("tempoFinal"), circulo: $("circulo").checked };
+  NUMEROS.forEach((k) => (novo[k] = Math.max(1, parseInt($(k).value, 10) || 1)));
+  status("status-regras", "Salvando…");
+  try { await Banco.salvarConfig(novo); status("status-regras", "Regras salvas. Valem a partir da próxima partida.", "ok"); }
+  catch (e) { status("status-regras", "Não foi possível salvar: " + e.message, "erro"); }
+});
+$("nova-rodada").addEventListener("click", async () => {
+  if (config?.rodada?.id && !config.rodada.encerrada && !confirm("A rodada atual ainda não foi encerrada (o telão não mostrou o resultado). Começar uma nova mesmo assim?")) return;
+  status("status-rodada", "Criando nova rodada…");
+  try { const r = await Banco.novaRodada(); status("status-rodada", `${r.nome} começou.`, "ok"); carregarHistorico(); }
+  catch (e) { status("status-rodada", "Erro: " + e.message, "erro"); }
+});
+$("encerrar").addEventListener("click", async () => {
+  if (!config?.rodada?.id) return status("status-rodada", "Não há rodada para encerrar. Comece uma nova.", "erro");
+  if (config.rodada.encerrada) return status("status-rodada", "Esta rodada já foi encerrada.", "erro");
+  if (!confirm("Encerrar a rodada? O telão passa a mostrar o ranking final e as respostas certas.")) return;
+  try { await Banco.encerrarRodada(); status("status-rodada", "Rodada encerrada. O telão mostra o resultado.", "ok"); carregarHistorico(); }
+  catch (e) { status("status-rodada", "Erro: " + e.message, "erro"); }
+});
+$("apagar-recorde").addEventListener("click", async () => {
+  if (!confirm("Apagar o recorde? A partida que fez o recorde é apagada de vez (sai do ranking e do histórico) e o recorde passa para a próxima melhor partida.")) return;
+  try { await Banco.apagarRecorde(); status("status-rodada", "Recorde apagado. Partida removida.", "ok"); carregarHistorico(); } catch (e) { status("status-rodada", "Erro: " + e.message, "erro"); }
+});
+// ---------- CSV (separador ";" e BOM: abre certo no Excel em português) ----------
+const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const csvCampo = (v) => { v = String(v ?? ""); return /[;"\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
+const textoFases = (p) => (p.fases || []).map((f) => `${FASES_DO_JOGO[f.fase]?.nome || f.fase} cor ${f.cor}% harmonia ${f.harmonia ? "certa" : "errada"}`).join(" | ");
+const quando = (t) => { const ms = t?.toMillis?.() ?? (typeof t === "number" ? t : null); return ms ? new Date(ms).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "—"; };
+function baixarCsv(nomeArquivo, rodadas) {
+  const linhas = [["rodada", "posicao", "nome", "total", "maximo", "nota_0_a_100", "quando", "fases"].join(";")];
+  rodadas.forEach((r) => r.partidas.forEach((p, i) => linhas.push([r.nome, i + 1, p.nome, p.total, p.maximo, p.maximo ? Math.round(p.total / p.maximo * 100) : "", quando(p.criadoEm), textoFases(p)].map(csvCampo).join(";"))));
+  const blob = new Blob(["﻿" + linhas.join("\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = nomeArquivo.replace(/[^\w.]+/g, "-"); a.click();
+}
+$("csv").addEventListener("click", () => baixarCsv(`ranking-${config?.rodada?.nome || "rodada"}.csv`, [{ nome: config?.rodada?.nome || "Sem rodada", partidas }]));
+
+// ---------- jogadores da rodada atual (apagar) ----------
+async function apagar(p) {
+  if (!confirm(`Apagar a partida de "${p.nome}" (${pontos(p)} pts)? Não dá para desfazer.`)) return false;
+  try { await Banco.apagarPartida(p.id); return true; }
+  catch (e) { alert("Não foi possível apagar: " + e.message); return false; }
+}
+function listarJogadores() {
+  $("jogadores").innerHTML = partidas.map((p, i) => `<tr><td class="n">${i + 1}º</td><td>${esc(p.nome)}</td><td class="n">${pontos(p)}</td><td style="color:var(--muted);font-size:.78rem">${esc(textoFases(p))}</td><td><button class="x" data-i="${i}" title="Apagar partida">✕</button></td></tr>`).join("")
+    || `<tr><td colspan="5" style="color:var(--muted)">Ninguém jogou nesta rodada ainda.</td></tr>`;
+}
+$("jogadores").addEventListener("click", async (e) => { const b = e.target.closest(".x"); if (b && await apagar(partidas[+b.dataset.i])) carregarHistorico(); });
+
+// ---------- estações ----------
+let estacoes = [];
+const msDe = (t) => t?.toMillis?.() ?? (typeof t === "number" ? t : 0);
+function desenharEstacoes() {
+  const agora = Date.now(), ROT = { livre: "Livre", jogando: "Jogando", concluiu: "Concluiu", demo: "Demonstração" };
+  const lista = [...estacoes].sort((a, b) => a.id.localeCompare(b.id));
+  $("estacoes").innerHTML = lista.map((e, i) => {
+    const idade = agora - msDe(e.atualizado), off = idade > 5 * 60000;
+    const st = off ? "off" : e.status, rot = off ? "Sem sinal" : (ROT[e.status] || e.status);
+    const min = Math.round(idade / 60000);
+    return `<tr><td><b>${esc(e.id)}</b></td><td><span class="st ${st}">${rot}</span></td><td>${esc(e.jogador || "—")}</td>`
+      + `<td class="n" style="${e.fila ? "color:var(--bad);font-weight:800" : ""}">${e.fila || 0}</td><td>${msDe(e.atualizado) ? (min < 1 ? "agora" : `há ${min} min`) : "—"}</td>`
+      + `<td><button class="x" data-e="${i}" title="Tirar da lista">✕</button></td></tr>`;
+  }).join("") || `<tr><td colspan="6" style="color:var(--muted)">Nenhum PC abriu o jogo ainda.</td></tr>`;
+  $("estacoes").dataset.ids = JSON.stringify(lista.map((e) => e.id));
+  const presas = lista.filter((e) => e.fila > 0);
+  $("alerta-fila").hidden = !presas.length;
+  $("alerta-fila").textContent = presas.length ? `Atenção: ${presas.map((e) => `${e.id} (${e.fila})`).join(", ")} com partidas não enviadas. Confira a internet desse PC.` : "";
+}
+$("estacoes").addEventListener("click", async (e) => {
+  const b = e.target.closest(".x"); if (!b) return;
+  const id = JSON.parse($("estacoes").dataset.ids)[+b.dataset.e];
+  if (confirm(`Tirar ${id} da lista? Ele volta a aparecer quando abrir o jogo de novo.`)) await Banco.apagarEstacao(id).catch((er) => alert(er.message));
+});
+
+// ---------- histórico ----------
+let rodadasHist = [], aberta = null;
+async function carregarHistorico() {
+  status("status-hist", "Carregando…");
+  try { rodadasHist = await Banco.historico(); status("status-hist", ""); desenharHistorico(); }
+  catch (e) { status("status-hist", "Erro: " + e.message, "erro"); }
+}
+function desenharHistorico() {
+  const mudo = (t) => `<td style="color:var(--muted);font-size:.78rem">${t}</td>`;
+  $("historico").innerHTML = rodadasHist.map((r, i) => {
+    const ps = r.partidas, m = ps[0], atual = r.id === config?.rodada?.id, ver = aberta === r.id;
+    const media = ps.length ? Math.round(ps.reduce((a, p) => a + pontos(p), 0) / ps.length) : 0;
+    let html = `<tr class="${ver ? "aberta" : ""}"><td><b>${esc(r.nome)}</b>${atual ? ' <span style="color:var(--ok);font-size:.75rem">· atual</span>' : ""}</td><td>${quando(r.inicio)}</td><td>${r.fim ? quando(r.fim) : (atual ? "em andamento" : "—")}</td>`
+      + `<td class="n">${ps.length}</td><td>${m ? `${esc(m.nome)} · ${pontos(m)}` : "—"}</td><td class="n">${media}</td>`
+      + `<td style="white-space:nowrap"><button class="lnk" data-ver="${i}">${ver ? "Fechar" : "Ver"}</button> · <button class="lnk" data-csv="${i}">CSV</button></td></tr>`;
+    if (ver) html += `<tr class="detalhe"><td colspan="7"><table><tbody>${ps.map((p, j) => `<tr><td class="n">${j + 1}º</td><td>${esc(p.nome)}</td><td class="n">${pontos(p)}</td>${mudo(quando(p.criadoEm))}${mudo(esc(textoFases(p)))}<td><button class="x" data-r="${i}" data-p="${j}" title="Apagar partida">✕</button></td></tr>`).join("") || `<tr><td style="color:var(--muted)">Nenhuma partida.</td></tr>`}</tbody></table></td></tr>`;
+    return html;
+  }).join("") || `<tr><td colspan="7" style="color:var(--muted)">Nenhuma rodada ainda.</td></tr>`;
+}
+$("historico").addEventListener("click", async (e) => {
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.ver != null) { const r = rodadasHist[+t.dataset.ver]; aberta = aberta === r.id ? null : r.id; desenharHistorico(); }
+  else if (t.dataset.csv != null) { const r = rodadasHist[+t.dataset.csv]; baixarCsv(`ranking-${r.nome}.csv`, [r]); }
+  else if (t.dataset.p != null) { const r = rodadasHist[+t.dataset.r]; if (await apagar(r.partidas[+t.dataset.p])) carregarHistorico(); }
+});
+$("hist-atualizar").addEventListener("click", carregarHistorico);
+$("hist-csv").addEventListener("click", () => baixarCsv("teoria-das-cores-todas-as-rodadas.csv", [...rodadasHist].reverse()));
+function estatisticas() {
+  const porFase = {};
+  partidas.forEach((p) => (p.fases || []).forEach((f) => {
+    const s = (porFase[f.fase] ||= { n: 0, acertos: 0, cor: 0 });
+    s.n++; s.acertos += f.harmonia ? 1 : 0; s.cor += f.cor || 0;
+  }));
+  const linhas = Object.entries(porFase).sort((a, b) => b[1].n - a[1].n).map(([id, s]) =>
+    `<tr><td>${FASES_DO_JOGO[id]?.nome || id}</td><td class="n">${s.n}</td><td class="n">${Math.round(s.acertos / s.n * 100)}%</td><td class="n">${Math.round(s.cor / s.n)}%</td></tr>`);
+  $("estatisticas").innerHTML = linhas.join("") || `<tr><td colspan="4" style="color:var(--muted)">Ninguém jogou nesta rodada ainda.</td></tr>`;
+}
+</script>
+</body>
+</html>

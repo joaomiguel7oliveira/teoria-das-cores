@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Protótipo · Cena tetrádica</title>
+<style>
+  :root { --ink: #16181d; --muted: #7a7a72; --line: #dcd8cf; --ok: #2d6a4f; --bad: #b4452f; --bg: #f3f1ec; --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --stops: #fe2712, #fc600a, #fb9902, #fccc1a, #fefe33, #b2d732, #66b032, #347c98, #0247fe, #4424d6, #8601af, #c21460, #fe2712; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  body { height: 100dvh; background: var(--bg); color: var(--ink); font-family: var(--sans); display: flex; flex-direction: column; align-items: center; padding: clamp(10px, 2.4vh, 22px) 16px; }
+  .coluna { width: 100%; max-width: 940px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .topo { display: flex; justify-content: space-between; font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  .palco { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: clamp(20px, 4vw, 48px); align-items: center; margin-top: clamp(8px, 2vh, 18px); }
+
+  /* esquerda: a imagem sobre 4 retângulos com as cores-chave */
+  .cena { height: 100%; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+  .cena img { flex: 1; min-height: 0; max-width: 100%; width: auto; object-fit: contain; border-radius: 6px 6px 0 0; box-shadow: 0 0 0 1px var(--line); }
+  .chaves { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; height: clamp(40px, 9vh, 70px); border-radius: 0 0 6px 6px; overflow: hidden; margin-top: -10px; box-shadow: 0 0 0 1px var(--line); }
+  .chaves span { cursor: help; }
+
+  /* direita: círculo pequeno para consulta, logo acima das alternativas */
+  .direita { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+  .roda-caixa { position: relative; width: clamp(110px, 20vh, 160px); aspect-ratio: 1; margin: 0 auto 4px; }
+  .roda { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, var(--stops));
+    -webkit-mask: radial-gradient(circle, transparent 50%, #000 50.4%); mask: radial-gradient(circle, transparent 50%, #000 50.4%); }
+  .roda-caixa svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .marcador { opacity: 0; transition: opacity .15s; } .marcador.ativo { opacity: 1; }
+  .opcoes { display: flex; flex-direction: column; gap: clamp(4px, 1vh, 8px); }
+  .opcao { display: flex; align-items: center; gap: 14px; text-align: left; padding: clamp(4px, 1vh, 8px) 14px; font: 600 .78rem var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink); border: 1px solid var(--line); border-radius: 4px; background: transparent; cursor: pointer; transition: border-color .15s; }
+  .opcao:hover:not(:disabled) { border-color: var(--ink); }
+  .opcao.sel { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); background: rgba(0,0,0,.04); }
+  .opcao.certa { border-color: var(--ok); box-shadow: inset 0 0 0 1px var(--ok); background: rgba(45,106,79,.07); }
+  .opcao.errada { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); background: rgba(180,69,47,.07); }
+  .opcao:disabled { cursor: default; }
+  .diagrama { width: clamp(34px, 6.4vh, 48px); height: clamp(34px, 6.4vh, 48px); flex: none; }
+  .d-roda { fill: none; stroke: #c9c5bb; stroke-width: 1.5; } .d-linha { stroke: #8a8a82; stroke-width: 1.5; fill: none; } .d-ponto { fill: var(--ink); }
+  .retorno { font-size: .84rem; line-height: 1.4; min-height: 4.4em; margin-top: 4px; }
+  .retorno.ok { color: var(--ok); } .retorno.erro { color: var(--bad); }
+  .btn { align-self: center; width: 220px; background: var(--ink); color: #fff; border: 0; border-radius: 4px; padding: 11px 24px; font: 700 .72rem var(--sans); letter-spacing: .18em; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+  .btn:disabled { background: #cfcbc2; cursor: not-allowed; }
+  @media (max-width: 760px) { .palco { grid-template-columns: 1fr; overflow: auto; align-items: start; } }
+</style>
+</head>
+<body>
+<div class="coluna">
+  <div class="topo"><span>Protótipo · cena tetrádica</span><span id="nota"></span></div>
+  <div class="palco">
+    <div class="cena"><img id="foto" alt="Cena tetrádica"><div class="chaves" id="chaves" aria-label="Quatro cores-chave"></div></div>
+    <div class="direita">
+      <div class="roda-caixa"><div class="roda"></div><svg viewBox="0 0 200 200" id="roda" role="img" aria-label="Círculo cromático para consulta"></svg></div>
+      <div class="opcoes" id="opcoes"></div>
+      <div class="retorno" id="retorno"></div>
+      <button class="btn" id="acao" disabled>Escolha uma opção</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const FOTO = "img/h5_tetradica.jpg";                 // cena tetrádica
+const CERTA = "tetradica";
+// As 4 cores-chave são a média dos pixels, na imagem, dentro de uma faixa de matiz escolhida para cada uma
+// (amarelo do personagem, azul do céu, verde da palmeira e vermelho do caranguejo). Num editor futuro, essas faixas poderiam ser definidas à mão para cada imagem.
+const FAIXAS_CHAVE = [[44, 58], [200, 218], [90, 140], [352, 10]];   // [de, até] em graus de matiz
+const HARMONIAS = {
+  analoga: { rotulo: "Análoga", dica: "Cores vizinhas no círculo cromático combinam de forma suave e calma." },
+  monocromatica: { rotulo: "Monocromática", dica: "Uma só cor com tons claros e escuros dá unidade e elegância." },
+  complementar: { rotulo: "Complementar", dica: "Cores opostas no círculo cromático criam contraste forte e vibrante." },
+  triade: { rotulo: "Tríade", dica: "Três cores igualmente espaçadas dão variedade com equilíbrio." },
+  tetradica: { rotulo: "Tetrádica", dica: "Quatro cores, em dois pares de opostas, dão uma paleta rica e variada." },
+};
+// pontos de cada harmonia no círculo (graus, 0 = topo), para os desenhos das alternativas
+const ANGULOS = { analoga: [-30, 0, 30], complementar: [0, 180], triade: [0, 120, 240], tetradica: [-60, 60, 120, 240] };
+function diagramaSVG(tipo) {
+  const c = 50, r = 38, pt = (a) => [c + r * Math.sin(a * Math.PI / 180), c - r * Math.cos(a * Math.PI / 180)];
+  let forma;
+  if (tipo === "monocromatica") {
+    const [x, y] = pt(0);
+    forma = `<line x1="${c}" y1="${c}" x2="${x}" y2="${y}" class="d-linha"/><circle cx="${c}" cy="${c - r * .35}" r="4" class="d-ponto"/><circle cx="${c}" cy="${c - r * .68}" r="5" class="d-ponto"/><circle cx="${x}" cy="${y}" r="6" class="d-ponto"/>`;
+  } else {
+    const pts = ANGULOS[tipo].map(pt), lista = pts.map((p) => p.join(",")).join(" ");
+    forma = (pts.length === 2 || tipo === "analoga" ? `<polyline points="${lista}" class="d-linha"/>` : `<polygon points="${lista}" class="d-linha"/>`) + pts.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="6" class="d-ponto"/>`).join("");
+  }
+  return `<svg class="diagrama" viewBox="0 0 100 100" aria-hidden="true"><circle cx="${c}" cy="${c}" r="${r}" class="d-roda"/>${forma}</svg>`;
+}
+
+// ---------- cor ----------
+const RODA_HEX = ["#fe2712", "#fc600a", "#fb9902", "#fccc1a", "#fefe33", "#b2d732", "#66b032", "#347c98", "#0247fe", "#4424d6", "#8601af", "#c21460"];
+const distAng = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+function rgbParaHsl([r, g, b]) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min, l = (max + min) / 2;
+  if (!d) return [0, 0, l];
+  const s = d / (1 - Math.abs(2 * l - 1));
+  const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [(h * 60 + 360) % 360, s, l];
+}
+const MATIZES = RODA_HEX.map((hex) => rgbParaHsl([1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)))[0]);
+function hueParaAngulo(h) {   // matiz da cor -> ângulo no círculo cromático
+  const base = MATIZES[0], hh = h < base ? h + 360 : h;
+  let i = 11; for (let k = 0; k < 12; k++) if (MATIZES[k] <= hh) i = k;
+  const ini = MATIZES[i] < base ? MATIZES[i] + 360 : MATIZES[i], prox = (i + 1) % 12, fim = prox === 0 ? base + 360 : MATIZES[prox];
+  return (i + (hh - ini) / (fim - ini)) * 30;
+}
+
+// ---------- as 4 cores-chave da imagem (matizes bem diferentes entre si) ----------
+function coresNasFaixas(img, faixas) {
+  const k = 200 / Math.max(img.naturalWidth, img.naturalHeight);
+  const cv = document.createElement("canvas"); cv.width = Math.round(img.naturalWidth * k); cv.height = Math.round(img.naturalHeight * k);
+  const ctx = cv.getContext("2d", { willReadFrequently: true }); ctx.drawImage(img, 0, 0, cv.width, cv.height);
+  const d = ctx.getImageData(0, 0, cv.width, cv.height).data, soma = faixas.map(() => ({ n: 0, r: 0, g: 0, b: 0 }));
+  for (let p = 0; p < d.length; p += 4) {
+    const [h, s, l] = rgbParaHsl([d[p], d[p + 1], d[p + 2]]);
+    if (s < 0.5 || l < 0.28 || l > 0.72) continue;                    // só cores vivas, sem sombras nem brilhos
+    faixas.forEach(([de, ate], f) => {
+      const dentro = de <= ate ? h >= de && h <= ate : h >= de || h <= ate;
+      if (dentro) { const a = soma[f]; a.n++; a.r += d[p]; a.g += d[p + 1]; a.b += d[p + 2]; }
+    });
+  }
+  return soma.map((a) => (a.n ? [Math.round(a.r / a.n), Math.round(a.g / a.n), Math.round(a.b / a.n)] : [200, 200, 200]));
+}
+// alternativa automática (cores mais frequentes com matizes bem diferentes), caso não haja pontos definidos
+function coresChave(img, n = 4) {
+  const k = 130 / Math.max(img.naturalWidth, img.naturalHeight);
+  const cv = document.createElement("canvas"); cv.width = Math.round(img.naturalWidth * k); cv.height = Math.round(img.naturalHeight * k);
+  const ctx = cv.getContext("2d", { willReadFrequently: true }); ctx.drawImage(img, 0, 0, cv.width, cv.height);
+  const d = ctx.getImageData(0, 0, cv.width, cv.height).data, faixas = Array.from({ length: 12 }, (_, i) => ({ n: 0, r: 0, g: 0, b: 0, centro: i * 30 + 15 }));
+  let total = 0;
+  for (let p = 0; p < d.length; p += 4) {
+    const [h, s, l] = rgbParaHsl([d[p], d[p + 1], d[p + 2]]); total++;
+    if (s > 0.4 && l > 0.2 && l < 0.8) { const f = faixas[Math.floor(h / 30) % 12]; f.n++; f.r += d[p]; f.g += d[p + 1]; f.b += d[p + 2]; }
+  }
+  const ordenadas = faixas.filter((f) => f.n > total * 0.012).sort((a, b) => b.n - a.n), escolhidas = [];
+  for (const folga of [60, 45, 30]) {            // exige matizes bem diferentes; relaxa se faltarem cores
+    for (const f of ordenadas) if (escolhidas.length < n && !escolhidas.includes(f) && escolhidas.every((e) => distAng(e.centro, f.centro) >= folga)) escolhidas.push(f);
+  }
+  return escolhidas.sort((a, b) => a.centro - b.centro).map((f) => [Math.round(f.r / f.n), Math.round(f.g / f.n), Math.round(f.b / f.n)]);
+}
+
+// ---------- círculo de consulta: só mostra onde cai a cor sobre a qual o mouse está ----------
+function construirRoda() {
+  const linhas = Array.from({ length: 24 }, (_, i) => { const a = i * 15 * Math.PI / 180; return `<line x1="${(100 + 50 * Math.sin(a)).toFixed(1)}" y1="${(100 - 50 * Math.cos(a)).toFixed(1)}" x2="${(100 + 100 * Math.sin(a)).toFixed(1)}" y2="${(100 - 100 * Math.cos(a)).toFixed(1)}" stroke="#f3f1ec" stroke-width="1.6"/>`; }).join("");
+  document.getElementById("roda").innerHTML = linhas + `<g class="marcador" id="marcador"><circle r="12" fill="none" stroke="#fff" stroke-width="3.4"/><circle r="15" fill="none" stroke="#16181d" stroke-width="1.8"/><circle r="8" id="marcador-cor"/></g>`;
+}
+function marcar(rgb) {
+  const m = document.getElementById("marcador"), [h, s] = rgbParaHsl(rgb);
+  if (s < 0.12) return m.classList.remove("ativo");
+  const a = hueParaAngulo(h) * Math.PI / 180;
+  m.setAttribute("transform", `translate(${(100 + 75 * Math.sin(a)).toFixed(1)} ${(100 - 75 * Math.cos(a)).toFixed(1)})`);
+  document.getElementById("marcador-cor").setAttribute("fill", `rgb(${rgb.join(",")})`);
+  m.classList.add("ativo");
+}
+
+// ---------- jogo ----------
+const foto = document.getElementById("foto"), chaves = document.getElementById("chaves"), opcoes = document.getElementById("opcoes");
+const retorno = document.getElementById("retorno"), acao = document.getElementById("acao");
+let escolhida = null, confirmada = false;
+
+function montarOpcoes() {
+  opcoes.innerHTML = Object.keys(HARMONIAS).map((k) => `<button class="opcao" data-k="${k}">${diagramaSVG(k)}<span>${HARMONIAS[k].rotulo}</span></button>`).join("");
+  opcoes.querySelectorAll(".opcao").forEach((b) => b.addEventListener("click", () => {
+    if (confirmada) return;
+    escolhida = b.dataset.k;
+    opcoes.querySelectorAll(".opcao").forEach((x) => x.classList.toggle("sel", x === b));
+    acao.disabled = false; acao.textContent = "Confirmar";
+  }));
+}
+function reiniciar() {
+  escolhida = null; confirmada = false; montarOpcoes();
+  retorno.className = "retorno"; retorno.textContent = "";
+  acao.disabled = true; acao.textContent = "Escolha uma opção";
+  document.getElementById("nota").textContent = "";
+}
+acao.addEventListener("click", () => {
+  if (confirmada) return reiniciar();
+  confirmada = true;
+  const acertou = escolhida === CERTA;
+  opcoes.querySelectorAll(".opcao").forEach((b) => { b.disabled = true; b.classList.remove("sel"); if (b.dataset.k === CERTA) b.classList.add("certa"); else if (b.dataset.k === escolhida) b.classList.add("errada"); });
+  retorno.className = "retorno " + (acertou ? "ok" : "erro");
+  retorno.innerHTML = `<strong>${acertou ? "Acertou!" : "Quase!"}</strong> ${HARMONIAS[CERTA].dica}`;
+  document.getElementById("nota").textContent = acertou ? "100 / 100" : "0 / 100";
+  acao.textContent = "Tentar de novo";
+});
+
+foto.onload = () => {
+  const cores = FAIXAS_CHAVE ? coresNasFaixas(foto, FAIXAS_CHAVE) : coresChave(foto);
+  chaves.style.gridTemplateColumns = `repeat(${cores.length}, 1fr)`;
+  chaves.innerHTML = cores.map((c) => `<span style="background:rgb(${c.join(",")})" data-rgb="${c.join(",")}"></span>`).join("");
+  chaves.querySelectorAll("span").forEach((s) => {
+    const rgb = s.dataset.rgb.split(",").map(Number);
+    s.addEventListener("mouseenter", () => marcar(rgb)); s.addEventListener("mouseleave", () => document.getElementById("marcador").classList.remove("ativo"));
+  });
+  const ajusta = () => { chaves.style.width = foto.clientWidth + "px"; };
+  ajusta(); window.addEventListener("resize", ajusta);
+};
+construirRoda(); reiniciar();
+foto.src = FOTO;
+</script>
+</body>
+</html>

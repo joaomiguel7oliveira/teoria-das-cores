@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resultado · Teoria das Cores</title>
+<style>
+  :root { --ink: #16181d; --muted: #7a7a72; --line: #dcd8cf; --ok: #2d6a4f; --bad: #b4452f; --bg: #f3f1ec; --roxo: #b5179e; --sans: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(20px, 4vh, 40px); padding: 90px 24px 60px; animation: entra .5s ease both; }
+  @keyframes entra { from { opacity: 0; } }
+  .nome-jogo { position: fixed; top: 28px; left: 32px; z-index: 4; margin: 0; display: flex; align-items: center; gap: 10px; font: 800 1.2rem/1 "Helvetica Neue", Helvetica, Arial, sans-serif; letter-spacing: -.02em; color: #16181d; pointer-events: none; }
+  .marca { position: fixed; top: 28px; right: 32px; text-align: right; margin: 0; font: italic 900 1.5rem/.95 var(--sans); text-transform: uppercase; color: #b3afa6; }
+  .marca .local { font-weight: 400; }
+  .marca .curso { display: block; margin-top: .6em; font-size: .5em; font-weight: 600; letter-spacing: .12em; }   /* mesma letra de MUNDO SENAI (itálico, maiúsculas), sem negrito */
+  .final { display: grid; grid-template-columns: auto minmax(0, 440px); justify-content: center; align-items: center; gap: clamp(32px, 6vw, 72px); width: 100%; max-width: 1000px; }
+  .resumo { text-align: center; }
+  .etapa { margin: 0 0 6px; font-size: .72rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  .nome { margin: 0; font-size: 1.2rem; font-weight: 700; }
+  .total { font-size: clamp(4rem, 13vh, 6.5rem); font-weight: 900; letter-spacing: -.05em; line-height: 1; margin: 6px 0; font-variant-numeric: tabular-nums; }
+  .total small { font-size: 1.3rem; color: var(--muted); font-weight: 700; letter-spacing: 0; }
+  /* título do jogador em destaque: "carimbo" que aparece quando a nota termina de contar */
+  .titulo-bloco { margin-top: 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .titulo-bloco small { font-size: .68rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+  .selo { display: inline-block; padding: 11px 26px; border-radius: 99px; background: var(--roxo); color: #fff; font-weight: 900; font-size: clamp(1.1rem, 2.6vh, 1.45rem); letter-spacing: -.01em; box-shadow: 0 10px 26px rgba(181, 23, 158, .32); opacity: 0; }
+  .selo.carimba { animation: carimbo .55s cubic-bezier(.2, 1.6, .4, 1) both; }
+  @keyframes carimbo { from { opacity: 0; transform: scale(1.8) rotate(-6deg); } to { opacity: 1; transform: none; } }
+  /* ranking ao vivo compacto (painel: "Ranking ao vivo com pontos") */
+  .ranking { width: min(760px, 100%); }
+  .ranking ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: column; grid-template-rows: repeat(var(--linhas, 3), auto); column-gap: 32px; }
+  .ranking li { display: grid; grid-template-columns: 2.4em minmax(0, 1fr) 3em; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--line); font-size: .9rem; }
+  .ranking li b { font-variant-numeric: tabular-nums; } .ranking li .p { text-align: right; } .ranking li .pos { color: var(--muted); }
+  .ranking li.eu { background: var(--roxo); color: #fff; border-radius: 8px; border-color: transparent; } .ranking li.eu .pos { color: #fff; }
+  .ranking li.reticencias { color: var(--muted); justify-content: center; display: flex; }
+  .posicao { margin: 16px 0 0; font-size: 1rem; min-height: 1.4em; }
+  .fases { display: flex; flex-direction: column; gap: 9px; }
+  .fase { display: grid; grid-template-columns: 44px minmax(0, 1fr) 52px 26px; gap: 12px; align-items: center; font-size: .85rem; }
+  .fase img { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; box-shadow: 0 0 0 1px var(--line); }
+  .barra { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; } .barra b { display: block; height: 100%; background: var(--ink); border-radius: inherit; width: 0; transition: width 1s ease; }
+  .fase .pct { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+  .fase .h { font-weight: 900; font-size: 1.1rem; text-align: center; } .h.ok { color: var(--ok); } .h.erro { color: var(--bad); }
+  .legenda { margin: 6px 0 0; font-size: .75rem; color: var(--muted); }
+  /* botão no canto: o próximo jogador sai da tela final sem esperar o tempo */
+  .proximo { position: fixed; right: 28px; bottom: 22px; z-index: 5; border: 0; border-radius: 99px; padding: 12px 22px; background: var(--ink); color: #fff; font: 800 .95rem var(--sans); letter-spacing: .02em; cursor: pointer; box-shadow: 0 8px 22px rgba(0,0,0,.18); }
+  .proximo:hover { background: #2a2d35; }
+  .rodape { position: fixed; bottom: 22px; left: 0; right: 0; text-align: center; font-size: .78rem; color: var(--muted); }
+  @media (max-width: 760px) { .final { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<p class="nome-jogo">Teoria das Cores</p>
+<p class="marca">Mundo SENAI <span class="local">| Sobradinho</span><span class="curso">Técnico em Design Gráfico</span></p>
+<div class="final">
+  <div class="resumo">
+    <p class="etapa">Resultado</p>
+    <p class="nome" id="nome"></p>
+    <div class="total"><span id="total">0</span><small> / <span id="maximo">0</span></small></div>
+    <div class="titulo-bloco"><small>Seu título</small><span class="selo" id="titulo"></span></div>
+    <p class="posicao" id="posicao"></p>
+  </div>
+  <div class="fases">
+    <p class="etapa" style="margin:0 0 4px">Suas fases · percepção de cor e harmonia</p>
+    <div id="fases"></div>
+    <p class="legenda">As respostas certas são reveladas quando a rodada terminar.</p>
+  </div>
+</div>
+<div class="ranking" id="ranking" hidden>
+  <p class="etapa">Ranking ao vivo · <span id="rodada-nome"></span></p>
+  <ol id="ranking-lista"></ol>
+</div>
+<button class="proximo" id="proximo" type="button">Próximo jogador ›</button>
+<p class="rodape" id="rodape">Voltando ao início em <b id="volta">20</b> s</p>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="banco.js"></script>
+<script src="sons.js"></script>
+<script>
+// Pontos por fase: até 60 pela cor (aproximação 0–100%) + 40 se acertar a harmonia = até 100 por fase
+// Prévia para revisão (final.html#previa): dados de exemplo; não grava no banco nem volta ao início
+const PREVIA = location.hash === "#previa";
+const EXEMPLO = { jogador: "Ana Clara", ordem_fases: ["prototipo-neve", "prototipo-casa", "prototipo-pooh", "prototipo-lego", "prototipo-perry"],
+  resultados: { "prototipo-neve": { cor: 94, harmonia: true }, "prototipo-casa": { cor: 88, harmonia: true }, "prototipo-pooh": { cor: 81, harmonia: true }, "prototipo-lego": { cor: 90, harmonia: true }, "prototipo-perry": { cor: 76, harmonia: false } } };
+const ler = (k, p) => { if (PREVIA) return EXEMPLO[k] ?? p; try { return JSON.parse(sessionStorage.getItem(k)) ?? p; } catch { return p; } };
+const nome = ((PREVIA ? EXEMPLO.jogador : sessionStorage.getItem("jogador")) || "Visitante").slice(0, 20);
+const ordem = ler("ordem_fases", []), resultados = ler("resultados", {});
+const fases = ordem.map((f) => {
+  const r = resultados[f] || {}, cor = Math.round(r.cor || 0), harmonia = !!r.harmonia;
+  return { fase: f, cor, harmonia, pontos: Math.round(cor * 0.6) + (harmonia ? 40 : 0) };
+});
+// guarda os pontos reais; com "Nota de 0 a 100" (painel) a tela mostra convertido (ver pontos() em banco.js)
+const total = fases.reduce((t, f) => t + f.pontos, 0), maximo = fases.length * 100;
+const em100 = Banco.configLocal().nota100 === true;
+const totalTela = pontos({ total, maximo }), maximoTela = em100 ? 100 : maximo;
+
+document.getElementById("nome").textContent = nome;
+document.getElementById("maximo").textContent = maximoTela;
+document.getElementById("titulo").textContent = tituloDoJogador(maximo ? total / maximo : 0);
+document.getElementById("fases").innerHTML = fases.map((f) => `<div class="fase" style="margin-bottom:9px">
+    <img src="${FASES_DO_JOGO[f.fase]?.img || ""}" alt="${FASES_DO_JOGO[f.fase]?.nome || ""}">
+    <span class="barra"><b data-w="${f.cor}"></b></span><span class="pct">${f.cor}%</span>
+    <span class="h ${f.harmonia ? "ok" : "erro"}" title="harmonia ${f.harmonia ? "certa" : "errada"}">${f.harmonia ? "✓" : "✗"}</span>
+  </div>`).join("");
+requestAnimationFrame(() => document.querySelectorAll(".barra b").forEach((b) => (b.style.width = b.dataset.w + "%")));
+
+// a nota sobe contando
+const el = document.getElementById("total"), t0 = performance.now();
+const conta = (t) => { const k = Math.min(1, (t - t0) / 1200); el.textContent = Math.round(totalTela * k * (2 - k)); if (k < 1) requestAnimationFrame(conta); else { Sons.tocar("final"); document.getElementById("titulo").classList.add("carimba"); } };
+requestAnimationFrame(conta);
+
+// grava a partida (uma vez só, mesmo se a página recarregar) e mostra a posição na rodada
+// Ranking compacto: os 6 primeiros (ou os 4 primeiros + "…" + o jogador), com o jogador em destaque; atualiza sozinho
+const escH = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function mostrarRanking(lista, nomeRodada) {
+  const eu = lista.findIndex((p) => p.nome === nome && p.total === total);
+  document.getElementById("posicao").innerHTML = eu >= 0 ? `<b>${eu + 1}º lugar</b> nesta rodada` : navigator.onLine ? "" : "Sem internet: seu resultado será enviado quando a conexão voltar";
+  const box = document.getElementById("ranking");
+  if (Banco.configLocal().telaAoVivo === "c") { box.hidden = true; return; }   // ao vivo "só nomes": pontos dos outros só ao encerrar
+  const linha = (p, i) => `<li class="${i === eu ? "eu" : ""}"><b class="pos">${i + 1}º</b><span>${escH(p.nome)}</span><b class="p">${pontos(p)}</b></li>`;
+  let itens = lista.slice(0, 6).map(linha);
+  if (eu >= 6) itens = [...lista.slice(0, 4).map(linha), `<li class="reticencias">…</li>`, linha(lista[eu], eu)];
+  document.getElementById("rodada-nome").textContent = nomeRodada || "esta rodada";
+  document.getElementById("ranking-lista").style.setProperty("--linhas", Math.max(1, Math.ceil(itens.length / 2)));
+  document.getElementById("ranking-lista").innerHTML = itens.join("");
+  box.hidden = !itens.length;
+}
+(async () => {
+  if (PREVIA) {
+    const outros = [["Pedro", 462], ["Larissa", 431], ["João Vitor", 409], ["Mariana", 397], ["Gabriel", 371], ["Sofia", 352]].map(([n, t]) => ({ nome: n, total: t, maximo: 500 }));
+    mostrarRanking([...outros, { nome, total, maximo }].sort((a, b) => b.total - a.total), "Rodada 3 · 10h40");
+    return;
+  }
+  const cfg = await Banco.atualizarConfig();
+  const rodada = cfg.rodada || { id: "sem-rodada", nome: "" };
+  Banco.ouvirRodada(rodada.id, (lista) => mostrarRanking(lista, rodada.nome));   // ao vivo: entra quem terminar depois
+  if (!sessionStorage.getItem("partida_salva") && fases.length) {
+    sessionStorage.setItem("partida_salva", "1");
+    await Banco.salvarPartida({ rodada: rodada.id, rodadaNome: rodada.nome, nome, total, maximo, fases, estacao: Banco.idDaEstacao() });
+  }
+  Banco.informarEstacao("concluiu", nome);   // painel e telão: este jogador terminou (e quantas partidas ficaram presas sem internet)
+})();
+
+// volta para o início depois do "Tempo na tela final" do painel; com 0, fica até alguém tocar na tela
+const TEMPO_FINAL = Banco.configLocal().tempoFinal ?? 20;
+function voltarAoInicio() {
+  ["jogando", "jogador", "resultados", "ordem_fases", "partida_salva"].forEach((k) => sessionStorage.removeItem(k));
+  location.href = "inicio.html";
+}
+// botão "Próximo jogador": sai na hora (a partida já foi gravada ao abrir esta tela)
+document.getElementById("proximo").addEventListener("click", () => { if (!PREVIA) voltarAoInicio(); });
+if (!(TEMPO_FINAL > 0)) {
+  document.getElementById("rodape").textContent = "";   // sem tempo: fica até alguém tocar em "Próximo jogador"
+} else {
+  let falta = TEMPO_FINAL;
+  document.getElementById("volta").textContent = falta;
+  setInterval(() => {
+    falta--; document.getElementById("volta").textContent = Math.max(0, falta);
+    if (falta <= 0 && PREVIA) falta = TEMPO_FINAL;
+    if (falta <= 0) voltarAoInicio();
+  }, 1000);
+}
+</script>
+</body>
+</html>

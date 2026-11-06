@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Protótipo · Molde no círculo</title>
+<style>
+  :root { --ink: #16181d; --muted: #7a7a72; --line: #dcd8cf; --ok: #2d6a4f; --bad: #b4452f; --bg: #f3f1ec; --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --stops: #fe2712, #fc600a, #fb9902, #fccc1a, #fefe33, #b2d732, #66b032, #347c98, #0247fe, #4424d6, #8601af, #c21460, #fe2712; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  body { height: 100dvh; background: var(--bg); color: var(--ink); font-family: var(--sans); display: flex; flex-direction: column; align-items: center; padding: clamp(10px, 2.4vh, 22px) 16px; }
+  .coluna { width: 100%; max-width: 940px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .topo { display: flex; justify-content: space-between; font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  .pergunta { text-align: center; font-size: clamp(1.4rem, 5vh, 2.4rem); font-weight: 700; letter-spacing: -.035em; line-height: 1.05; margin: clamp(6px, 2vh, 16px) 0 4px; }
+  .dica { text-align: center; font-size: .8rem; color: var(--muted); margin: 0 0 clamp(8px, 2vh, 14px); }
+  .palco { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 1.15fr); gap: 28px; align-items: center; }
+  .imagem { height: 100%; min-height: 0; display: flex; justify-content: center; }
+  .imagem img { height: 100%; width: auto; max-width: 100%; object-fit: contain; border-radius: 6px; box-shadow: 0 0 0 1px var(--line); }
+  .lateral { display: flex; justify-content: center; }
+  .roda-caixa { position: relative; width: min(100%, 56vh); aspect-ratio: 1; touch-action: none; cursor: grab; user-select: none; outline: none; }
+  .roda-caixa:active { cursor: grabbing; }
+  .roda { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, var(--stops));
+    -webkit-mask: radial-gradient(circle, transparent 50%, #000 50.4%); mask: radial-gradient(circle, transparent 50%, #000 50.4%); }
+  .roda-caixa svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .acoes { display: flex; flex-direction: column; align-items: center; gap: 8px; min-height: 84px; margin-top: 12px; }
+  .retorno { font-size: .92rem; text-align: center; min-height: 2.6em; max-width: 580px; }
+  .retorno.ok { color: var(--ok); } .retorno.perto { color: #8a6a1f; } .retorno.erro { color: var(--bad); }
+  .btn { width: 250px; background: var(--ink); color: #fff; border: 0; border-radius: 4px; padding: 12px 24px; font: 700 .72rem var(--sans); letter-spacing: .18em; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+  .fim { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; }
+  .fim .grande { font-size: clamp(4rem, 16vh, 7rem); font-weight: 700; letter-spacing: -.04em; line-height: 1; }
+  @media (max-width: 760px) { .palco { grid-template-columns: 1fr; gap: 8px; } .roda-caixa { width: min(100%, 26vh); } }
+</style>
+</head>
+<body>
+<div class="coluna" id="tela"></div>
+
+<script>
+// ---------- círculo cromático: 12 cores principais; o ângulo 0° fica no topo, crescendo no sentido horário ----------
+const RODA_HEX = ["#fe2712", "#fc600a", "#fb9902", "#fccc1a", "#fefe33", "#b2d732", "#66b032", "#347c98", "#0247fe", "#4424d6", "#8601af", "#c21460"];
+const MOLDES = {
+  complementar: { nome: "Complementar", pontas: [0, 180] },
+  analoga: { nome: "Análoga", pontas: [0, 30, 60] },
+  triade: { nome: "Tríade", pontas: [0, 120, 240] },
+  tetradica: { nome: "Tetrádica", pontas: [0, 120, 180, 300] },
+};
+const RODADAS = [
+  { img: "imagens-todas/358d8be1362c3873809654510bb1ff31.jpg", molde: "complementar" },
+  { img: "img/h2_analoga.jpg", molde: "analoga" },
+  { img: "img/h3_triade.jpg", molde: "triade" },
+  { img: "img/h5_tetradica.jpg", molde: "tetradica" },
+  { img: "img/h1_complementar.jpg", molde: "complementar" },
+];
+const ZERO_EM = 60, NOTA_ACERTO = 80, NOTA_PERTO = 50;     // nota contínua: erro 0° = 100, 60° ou mais = 0 (fotos reais nunca encaixam perfeitamente)
+
+const distAng = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+const norm = (a) => ((a % 360) + 360) % 360;
+function rgbParaHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min, l = (max + min) / 2;
+  if (!d) return [0, 0, l];
+  const s = d / (1 - Math.abs(2 * l - 1));
+  const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [(h * 60 + 360) % 360, s, l];
+}
+const MATIZES = RODA_HEX.map((hex) => rgbParaHsl(...[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)))[0]);
+// matiz da imagem -> ângulo no círculo cromático (interpola entre as 12 cores principais)
+function hueParaAngulo(h) {
+  const base = MATIZES[0], hh = h < base ? h + 360 : h;
+  let i = 11; for (let k = 0; k < 12; k++) if (MATIZES[k] <= hh) i = k;
+  const ini = MATIZES[i] < base ? MATIZES[i] + 360 : MATIZES[i], prox = (i + 1) % 12, fim = prox === 0 ? base + 360 : MATIZES[prox];
+  return (i + (hh - ini) / (fim - ini)) * 30;
+}
+
+// ---------- análise da imagem: onde as cores dela caem no círculo, e qual é a melhor posição do molde ----------
+function histograma(img) {
+  const k = 160 / Math.max(img.naturalWidth, img.naturalHeight);
+  const cv = document.createElement("canvas"); cv.width = Math.round(img.naturalWidth * k); cv.height = Math.round(img.naturalHeight * k);
+  const ctx = cv.getContext("2d", { willReadFrequently: true }); ctx.drawImage(img, 0, 0, cv.width, cv.height);
+  const d = ctx.getImageData(0, 0, cv.width, cv.height).data, hist = new Array(72).fill(0); let total = 0;
+  for (let p = 0; p < d.length; p += 4) {
+    const [h, s, l] = rgbParaHsl(d[p], d[p + 1], d[p + 2]);
+    if (s < 0.3 || l < 0.15 || l > 0.9) continue;                      // ignora preto, branco e cinzas
+    hist[Math.floor(hueParaAngulo(h) / 5) % 72]++; total++;
+  }
+  return hist.map((n) => (n >= total * 0.015 ? n : 0));              // ignora ruído (menos de 1,5% das cores)
+}
+const custo = (hist, pontas, phi) => hist.reduce((t, n, b) => n ? t + n * Math.min(...pontas.map((o) => distAng(b * 5 + 2.5, phi + o))) : t, 0);
+function melhorPosicao(hist, pontas) {
+  let melhor = 0, c0 = Infinity;
+  for (let phi = 0; phi < 360; phi++) { const c = custo(hist, pontas, phi); if (c < c0) { c0 = c; melhor = phi; } }
+  return melhor;
+}
+// giros que deixam o molde igual a ele mesmo (ex.: a tríade se repete a cada 120°)
+function simetrias(pontas) {
+  return [...Array(360).keys()].filter((r) => pontas.every((o) => pontas.some((q) => distAng(o + r, q) < 0.5)));
+}
+const erroDe = (phi, alvo, sims) => Math.min(...sims.map((r) => distAng(phi, alvo + r)));
+
+// ---------- jogo ----------
+const tela = document.getElementById("tela");
+let rodada, pontos, atual, phi, confirmada;
+
+function iniciar() { rodada = 0; pontos = []; abrirRodada(); }
+function abrirRodada() {
+  const cfg = RODADAS[rodada], molde = MOLDES[cfg.molde];
+  confirmada = false;
+  tela.innerHTML = `
+    <div class="topo"><span>Protótipo · molde no círculo</span><span id="nota">${rodada + 1} / ${RODADAS.length}</span></div>
+    <div class="pergunta">Molde ${molde.nome}</div>
+    <p class="dica">Arraste no círculo para girar o molde até as pontas caírem nas cores da imagem.</p>
+    <div class="palco">
+      <div class="imagem"><img id="foto" alt="Imagem de referência"></div>
+      <div class="lateral"><div class="roda-caixa" id="caixa" tabindex="0" aria-label="Círculo cromático com molde giratório">
+        <div class="roda"></div><svg viewBox="0 0 200 200" id="svg"></svg></div></div>
+    </div>
+    <div class="acoes"><div class="retorno" id="retorno"></div><button class="btn" id="acao" disabled>Confirmar</button></div>`;
+  const foto = document.getElementById("foto");
+  foto.onload = () => {
+    const hist = histograma(foto);
+    const alvo = melhorPosicao(hist, molde.pontas), sims = simetrias(molde.pontas);
+    // começa longe do encaixe: sorteia giros até achar um com erro grande (ou fica com o pior de várias tentativas)
+    phi = Math.floor(Math.random() * 360);
+    for (let t = 0; t < 300 && erroDe(phi, alvo, sims) < 45; t++) phi = Math.floor(Math.random() * 360);
+    atual = { molde, alvo, sims };
+    desenhar(); ligarArraste();
+    document.getElementById("acao").disabled = false;
+  };
+  foto.src = cfg.img;
+  document.getElementById("acao").addEventListener("click", () => (confirmada ? proxima() : confirmar()));
+}
+
+// ---------- desenho do círculo e do molde ----------
+function pontoNoAnel(ang, r = 75) { const a = ang * Math.PI / 180; return [100 + r * Math.sin(a), 100 - r * Math.cos(a)]; }
+function formaDoMolde(pts) { const xy = pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" "); return pts.length === 2 ? `<polyline points="${xy}"` : `<polygon points="${xy}"`; }
+function desenhar() {
+  const linhas = Array.from({ length: 24 }, (_, i) => { const [x1, y1] = pontoNoAnel(i * 15, 50), [x2, y2] = pontoNoAnel(i * 15, 100); return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#f3f1ec" stroke-width="1.4"/>`; }).join("");
+  const pts = atual.molde.pontas.map((o) => pontoNoAnel(phi + o));
+  let sombra = "";
+  if (confirmada) {
+    const ideal = atual.molde.pontas.map((o) => pontoNoAnel(atual.alvo + o));
+    sombra = `${formaDoMolde(ideal)} fill="none" stroke="#fff" stroke-width="3.5" stroke-dasharray="5 4" stroke-linejoin="round"/>` + `${formaDoMolde(ideal)} fill="none" stroke="#16181d" stroke-width="1.5" stroke-dasharray="5 4" stroke-linejoin="round"/>` +
+      ideal.map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="11" fill="none" stroke="#16181d" stroke-width="1.5" stroke-dasharray="3 3"/>`).join("");
+  }
+  document.getElementById("svg").innerHTML = linhas + sombra +
+    `${formaDoMolde(pts)} fill="rgba(255,255,255,.12)" stroke="#16181d" stroke-width="2.2" stroke-linejoin="round"/>` +
+    pts.map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="8.5" fill="#fff" stroke="#16181d" stroke-width="2.6"/>`).join("");
+}
+
+// ---------- girar arrastando no círculo (ou com as setas do teclado) ----------
+function ligarArraste() {
+  const caixa = document.getElementById("caixa");
+  let arrasto = null;
+  const angulo = (e) => { const r = caixa.getBoundingClientRect(); return Math.atan2(e.clientX - (r.left + r.width / 2), -(e.clientY - (r.top + r.height / 2))) * 180 / Math.PI; };
+  caixa.addEventListener("pointerdown", (e) => { if (confirmada) return; caixa.setPointerCapture(e.pointerId); arrasto = { t0: angulo(e), p0: phi }; });
+  caixa.addEventListener("pointermove", (e) => { if (!arrasto) return; phi = norm(arrasto.p0 + (angulo(e) - arrasto.t0)); desenhar(); });
+  const soltar = () => { arrasto = null; };
+  caixa.addEventListener("pointerup", soltar); caixa.addEventListener("pointercancel", soltar);
+  caixa.addEventListener("keydown", (e) => { if (confirmada) return; const passo = e.shiftKey ? 10 : 2; if (e.key === "ArrowRight") { phi = norm(phi + passo); desenhar(); } if (e.key === "ArrowLeft") { phi = norm(phi - passo); desenhar(); } });
+}
+
+// ---------- resposta ----------
+function confirmar() {
+  confirmada = true;
+  const erro = erroDe(phi, atual.alvo, atual.sims);
+  const nota = Math.max(0, Math.round(100 * (1 - erro / ZERO_EM))); pontos.push(nota);
+  const cls = nota >= NOTA_ACERTO ? "ok" : nota >= NOTA_PERTO ? "perto" : "erro";
+  const msg = cls === "ok" ? "Acertou! O molde encaixou nas cores da imagem." : cls === "perto" ? "Quase! Falta um pouco para as pontas caírem nas cores." : "Ainda não. O contorno tracejado mostra onde o molde encaixa.";
+  const r = document.getElementById("retorno"); r.className = "retorno " + cls; r.textContent = `${msg} Diferença: ${Math.round(erro)}° · ${nota} pontos.`;
+  document.getElementById("acao").textContent = rodada === RODADAS.length - 1 ? "Ver resultado" : "Próxima";
+  desenhar();
+}
+function proxima() { if (++rodada < RODADAS.length) abrirRodada(); else fim(); }
+function fim() {
+  const media = Math.round(pontos.reduce((a, b) => a + b, 0) / pontos.length);
+  tela.innerHTML = `<div class="fim"><div class="topo" style="width:100%"><span>Protótipo · molde no círculo</span><span></span></div>
+    <div><div class="dica" style="margin:0 0 6px">Nota média</div><div class="grande">${media}<span style="font-size:.3em;color:var(--muted)">/100</span></div></div>
+    <button class="btn" id="de-novo">Jogar de novo</button></div>`;
+  document.getElementById("de-novo").addEventListener("click", iniciar);
+}
+iniciar();
+</script>
+</body>
+</html>

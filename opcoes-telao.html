@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Revisão · Telas do telão</title>
+<!-- Página de revisão (não faz parte do jogo): o telão de verdade (telao.html) em modo prévia, com dados de exemplo -->
+<style>
+  :root { --ink: #16181d; --muted: #7a7a72; --senai: #b5179e; --sans: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e9e6df; color: var(--ink); font-family: var(--sans); }
+  header { max-width: 1400px; margin: 0 auto; padding: 28px 40px 4px; }
+  h1 { margin: 0 0 6px; font-size: 1.5rem; letter-spacing: -.02em; } header p { margin: 0; color: var(--muted); }
+  h2.grupo { max-width: 1400px; margin: 26px auto 0; padding: 0 40px; font-size: .8rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  .grade { max-width: 1400px; margin: 0 auto; padding: 12px 40px 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 28px; }
+  .op h3 { margin: 0 0 4px; font-size: 1.02rem; } .op h3 b { color: var(--senai); margin-right: 6px; }
+  .op p { margin: 0 0 10px; font-size: .86rem; color: #55534d; line-height: 1.4; min-height: 2.8em; }
+  .quadro { width: 100%; aspect-ratio: 16 / 9; position: relative; overflow: hidden; border-radius: 10px; background: #f6f4ef; box-shadow: 0 10px 30px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.06); }
+  .quadro iframe { position: absolute; top: 0; left: 0; width: 1600px; height: 900px; border: 0; transform-origin: 0 0; pointer-events: none; }
+  .op a { display: inline-block; margin-top: 8px; font-size: .8rem; color: var(--ink); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Telas do telão · revisão</h1>
+  <p>É o telão de verdade, com dados de exemplo (22 participantes: 14 já concluíram e 8 ainda estão jogando).</p>
+</header>
+
+<h2 class="grupo">Durante a rodada — o moderador escolhe no painel ("Ranking ao vivo com pontos")</h2>
+<div class="grade">
+  <div class="op"><h3><b>Ligado</b>Com pontos</h3><p>Lista comum em 2 colunas, com pontos, atualizando a cada pessoa que termina (sem pódio). Quem ainda joga aparece no fim, em cinza, como "jogando…".</p><div class="quadro"><iframe src="telao.html#previa=b" title="Opção B"></iframe></div><a href="telao.html#previa=b" target="_blank">Abrir em tela cheia</a></div>
+  <div class="op"><h3><b>Desligado</b>Só nomes</h3><p>Mesmo layout, só com os nomes (✓ concluiu, ● jogando), na ordem em que terminaram. Pontos só ao encerrar: mantém o suspense.</p><div class="quadro"><iframe src="telao.html#previa=c" title="Opção C"></iframe></div><a href="telao.html#previa=c" target="_blank">Abrir em tela cheia</a></div>
+</div>
+
+<h2 class="grupo">Outras telas</h2>
+<div class="grade">
+  <div class="op"><h3>Rodada encerrada</h3><p>Pódio pequeno, todos em 2 colunas e as respostas certas das imagens jogadas.</p><div class="quadro"><iframe src="telao.html#previa=fim" title="Rodada encerrada"></iframe></div><a href="telao.html#previa=fim" target="_blank">Abrir em tela cheia</a></div>
+  <div class="op"><h3>Sem rodada</h3><p>A tela inicial do jogo, com "Aguardando a próxima rodada" e o recorde do evento.</p><div class="quadro"><iframe src="telao.html#previa=espera" title="Sem rodada"></iframe></div><a href="telao.html#previa=espera" target="_blank">Abrir em tela cheia</a></div>
+</div>
+
+<script>
+const encaixar = () => document.querySelectorAll(".quadro").forEach((q) => { q.firstElementChild.style.transform = `scale(${q.clientWidth / 1600})`; });
+addEventListener("resize", encaixar); encaixar();
+</script>
+</body>
+</html>

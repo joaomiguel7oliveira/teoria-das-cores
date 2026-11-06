@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ranking · Teoria das Cores</title>
+<style>
+  :root { --ink: #16181d; --muted: #7a7a72; --line: #dcd8cf; --bg: #f6f4ef; --roxo: #b5179e; --ok: #2d6a4f; --sans: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); }
+  /* marca: MUNDO preto, SENAI rosa arroxeado, "| Sobradinho" (unidade) */
+  .marca { position: fixed; top: 3vh; left: 3vw; margin: 0; font: italic 900 clamp(1.2rem, 2.8vh, 2rem)/1 var(--sans); text-transform: uppercase; white-space: nowrap; z-index: 2; }
+  .marca .curso { display: block; margin-top: .6em; font-size: .5em; font-weight: 600; letter-spacing: .12em; } .marca .curso { color: var(--muted); }
+  .marca .senai { color: var(--roxo); } .marca .local { font-weight: 400; color: var(--muted); }
+  .tela { position: absolute; inset: 0; padding: 11vh 4vw 3vh; display: flex; flex-direction: column; align-items: center; gap: 2vh; animation: entra .6s ease both; }
+  @keyframes entra { from { opacity: 0; transform: translateY(12px); } }
+  h1 { margin: 0; font-size: clamp(1.8rem, 5vh, 3.2rem); letter-spacing: -.035em; text-align: center; }
+  .sub { margin: -1vh 0 0; font-size: clamp(.75rem, 1.7vh, 1rem); font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); text-align: center; }
+  .rodape { margin-top: auto; display: flex; gap: 14px; align-items: baseline; font-size: clamp(.8rem, 1.8vh, 1.1rem); color: var(--muted); }
+  .rodape b { color: var(--ink); font-size: 1.4em; } .rodape em { font-style: normal; font-weight: 700; color: var(--roxo); }
+
+  /* aguardando rodada */
+  .espera { justify-content: center; } .espera h1 { font-size: clamp(2.2rem, 7vh, 4.4rem); } .espera .rodape { margin-top: 4vh; }
+
+  @keyframes pisca { 50% { opacity: .25; } }
+  .dica-fim { margin: 0; font-size: clamp(.8rem, 1.8vh, 1.05rem); color: var(--muted); }
+  /* rodada encerrada: pódio pequeno + todos em 2 colunas + respostas certas */
+  .final { gap: 1.6vh; }
+  .podio { display: flex; justify-content: center; align-items: flex-end; gap: 1.6vw; }
+  .degrau { width: clamp(160px, 15vw, 260px); text-align: center; }
+  .degrau .nome { font-size: clamp(1rem, 2.4vh, 1.5rem); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .degrau .pts { font-size: clamp(.8rem, 1.8vh, 1.1rem); font-weight: 700; color: var(--muted); margin: 2px 0 6px; }
+  .degrau .bloco { border-radius: 10px 10px 0 0; display: grid; place-items: center; font: 900 clamp(1.2rem, 3vh, 2rem) var(--sans); color: #fff; }
+  .d1 .bloco { height: 9vh; background: var(--ink); } .d2 .bloco { height: 6.5vh; background: #55534d; } .d3 .bloco { height: 5vh; background: #8a877f; }
+  .d1 .nome { color: var(--roxo); }
+  .lista { list-style: none; margin: 0; padding: 1vh 0 0; width: min(1300px, 92vw); flex: 0 1 calc(var(--linhas, 10) * 7.2vh); min-height: 0;   /* poucos nomes: linhas de altura normal; muitos: encolhe para caber */ border-top: 2px solid var(--ink);
+    display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: column; grid-template-rows: repeat(var(--linhas, 10), minmax(0, 1fr)); column-gap: 4vw; }
+  .lista li { display: grid; grid-template-columns: 3em minmax(0, 1fr) 4em; align-items: center; border-bottom: 1px solid var(--line); font-size: var(--fonte, 1.4rem); }
+  .lista .pos { font-weight: 900; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .lista .nome { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lista .pts { text-align: right; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .lista li.jogando { color: #9a968c; } .lista li.jogando .pts { font-weight: 600; font-size: .8em; color: #1f5fa8; }
+  .lista li.jogando .pos i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #1f5fa8; animation: pisca 1.4s ease-in-out infinite; }
+  .lista.sem-pos li { grid-template-columns: 2em minmax(0, 1fr) 6em; } .lista.sem-pos li:not(.jogando) .pos { color: var(--ok); }
+  .lista li.top1 .pos { color: #c9a227; } .lista li.top2 .pos { color: #9aa0a6; } .lista li.top3 .pos { color: #b0703c; }
+  /* sem rodada: a própria tela inicial do jogo, em modo telão (inicio.html#telao) */
+  .espera-frame { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; }
+  body.sem-rodada .marca { display: none; }
+  .gabarito { width: min(1500px, 94vw); display: flex; align-items: center; gap: 1.4vw; padding: 1.2vh 1.4vw; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px var(--line); }
+  .gabarito > span { font-size: clamp(.7rem, 1.5vh, .9rem); font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  .gabarito .itens { display: flex; gap: 1.2vw; flex-wrap: wrap; }
+  .gab { display: flex; align-items: center; gap: 8px; }
+  .gab img { width: clamp(38px, 6vh, 64px); aspect-ratio: 1; object-fit: cover; border-radius: 8px; box-shadow: 0 0 0 1px var(--line); }
+  .gab b { display: block; font-size: clamp(.8rem, 1.8vh, 1.1rem); } .gab small { color: var(--muted); font-size: clamp(.65rem, 1.4vh, .85rem); }
+  .aviso { position: fixed; bottom: 1vh; right: 2vw; margin: 0; font-size: .75rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<p class="marca"><span class="mundo">Mundo</span> <span class="senai">SENAI</span> <span class="local">| Sobradinho</span><span class="curso">Técnico em Design Gráfico</span></p>
+<div id="palco"></div>
+<p class="aviso" id="aviso"></p>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="banco.js"></script>
+<script>
+// Telão (só exibição, atualiza sozinho):
+//   sem rodada        → "aguardando a próxima rodada"
+//   rodada em jogo    → "Ranking ao vivo": lista com pontos (B) ou só nomes (C), conforme o interruptor do painel
+//   rodada encerrada  → pódio pequeno, todos os participantes em 2 colunas e as respostas certas das imagens jogadas
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const msDe = (t) => t?.toMillis?.() ?? (typeof t === "number" ? t : 0);
+let carregadas = false, cfg = null, partidas = [], estacoes = [], recorde = null, pararRodada = () => {}, rodadaOuvida;
+const palco = document.getElementById("palco");
+let ultimaTela = "";
+
+function rodapeRecorde() {
+  return recorde ? `<div class="rodape">Recorde do evento <b>${pontos(recorde)}</b> <em>${esc(recorde.nome)}</em></div>` : "";
+}
+// Tela durante a rodada (painel → "Ranking ao vivo com pontos"): "b" = com pontos · "c" = só nomes (pontos só no fim)
+const PREVIA = (location.hash.match(/previa=(\w+)/) || [])[1];
+const estiloAndamento = () => (["b", "c"].includes(PREVIA) ? PREVIA : cfg?.telaAoVivo === "c" ? "c" : "b");
+// estações desta rodada com sinal nos últimos 5 min que estão no meio de uma partida
+function jogandoAgora(r) {
+  const agora = Date.now();
+  return estacoes.filter((e) => e.status === "jogando" && e.rodada === r.id && agora - msDe(e.atualizado) < 5 * 60000);
+}
+function desenhar() {
+  const r = cfg?.rodada;
+  let html;
+  // sem rodada, ou rodada encerrada sem ninguém: tela de espera
+  if (r?.id && r.encerrada && !carregadas) return;   // espera as partidas chegarem (evita piscar a tela de espera)
+  const esperando = !r?.id || (r.encerrada && !partidas.length);
+  if (esperando) {
+    html = `<iframe class="espera-frame" src="inicio.html#telao" title="Aguardando a próxima rodada"></iframe>`;   // o recorde aparece dentro dela
+  } else if (!r.encerrada) {
+    // estilo B: o próprio ranking, ao vivo (com pontos); estilo C: o mesmo layout, só com nomes (pontos só no fim)
+    const jogando = jogandoAgora(r);
+    const comPontos = estiloAndamento() === "b";
+    const conc = comPontos ? partidas : [...partidas].sort((a, b) => msDe(a.criadoEm) - msDe(b.criadoEm));
+    const n = conc.length + jogando.length;
+    // lista comum (sem pódio): quem concluiu, por pontos; quem ainda joga, no fim, como "jogando…"
+    const resto = [...conc.map((p) => ({ nome: p.nome, total: pontos(p) })), ...jogando.map((e) => ({ nome: e.jogador || e.id, jogando: true }))];
+    const linhas = Math.max(1, Math.ceil(resto.length / 2));   // metade em cada coluna
+    const fonte = `clamp(.8rem, ${Math.min(3.4, 64 / linhas).toFixed(2)}vh, 1.7rem)`;
+    html = `<div class="tela final"><h1>${comPontos ? "Ranking ao vivo" : "Teoria das Cores"}</h1><p class="sub">${n} ${n === 1 ? "participante" : "participantes"}</p>
+      ${resto.length ? `<ol class="lista${comPontos ? "" : " sem-pos"}" style="--linhas:${linhas};--fonte:${fonte}">${resto.map((p, k) => p.jogando
+        ? `<li class="jogando"><span class="pos"><i></i></span><span class="nome">${esc(p.nome)}</span><span class="pts">jogando…</span></li>`
+        : `<li class="${comPontos && k < 3 ? "top" + (k + 1) : ""}"><span class="pos">${comPontos ? `${k + 1}º` : "✓"}</span><span class="nome">${esc(p.nome)}</span><span class="pts">${comPontos ? p.total : ""}</span></li>`).join("")}</ol>` : `<p class="dica-fim">Os nomes aparecem aqui assim que a turma começar a jogar.</p><div style="flex:1"></div>`}
+      ${rodapeRecorde()}</div>`;
+  } else {
+    const top = partidas.slice(0, 3), resto = partidas.slice(3);
+    const linhas = Math.max(1, Math.ceil(resto.length / 2));   // metade em cada coluna
+    const fonte = `clamp(.8rem, ${Math.min(3.2, 52 / linhas).toFixed(2)}vh, 1.6rem)`;
+    const usadas = [...new Set(partidas.flatMap((p) => (p.fases || []).map((f) => f.fase)))].filter((f) => FASES_DO_JOGO[f]);
+    html = `<div class="tela final"><h1>Resultado · ${esc(r.nome)}</h1><p class="sub">${partidas.length} ${partidas.length === 1 ? "participante" : "participantes"}</p>
+      <div class="podio">${[1, 0, 2].filter((i) => top[i]).map((i) => `<div class="degrau d${i + 1}"><div class="nome">${esc(top[i].nome)}</div><div class="pts">${pontos(top[i])} pts</div><div class="bloco">${i + 1}º</div></div>`).join("")}</div>
+      ${resto.length ? `<ol class="lista" style="--linhas:${linhas};--fonte:${fonte}">${resto.map((p, k) => `<li><span class="pos">${k + 4}º</span><span class="nome">${esc(p.nome)}</span><span class="pts">${pontos(p)}</span></li>`).join("")}</ol>` : `<div style="flex:1"></div>`}
+      ${usadas.length ? `<div class="gabarito"><span>Respostas certas</span><div class="itens">${usadas.map((f) => `<div class="gab"><img src="${FASES_DO_JOGO[f].img}" alt=""><div><b>${HARMONIAS_NOMES[FASES_DO_JOGO[f].harmonia] || ""}</b><small>${esc(FASES_DO_JOGO[f].nome)}</small></div></div>`).join("")}</div></div>` : ""}
+      ${rodapeRecorde()}</div>`;
+  }
+  document.body.classList.toggle("sem-rodada", esperando);
+  if (html === ultimaTela) return;   // não refaz a tela (e a animação) sem mudança
+  ultimaTela = html;
+  palco.innerHTML = html;
+}
+
+// Prévia com dados de exemplo (telao.html#previa=b|c|fim|espera), usada em opcoes-telao.html; não lê nem grava no banco
+if (PREVIA) {
+  const NOMES = ["Ana Clara", "Pedro", "Larissa", "João Vitor", "Mariana", "Gabriel", "Sofia", "Lucas", "Beatriz", "Rafael", "Isabela", "Matheus", "Júlia", "Enzo", "Lívia", "Davi", "Helena", "Arthur", "Valentina", "Miguel", "Laura", "Heitor"];
+  const FASES = ["prototipo-neve", "prototipo-casa", "prototipo-pooh", "prototipo-lego", "prototipo-perry"];
+  const fim = PREVIA === "fim", conc = fim ? NOMES.length : 14;
+  cfg = { rodada: PREVIA === "espera" ? null : { id: "previa", nome: "Rodada 3 · 10h40", encerrada: fim } };
+  partidas = NOMES.slice(0, conc).map((nome, i) => ({ id: "p" + i, nome, total: 0, criadoEm: i, fases: FASES.map((fase) => ({ fase })) }));
+  partidas.forEach((p, i) => (p.total = [462, 448, 431, 420, 409, 397, 388, 371, 365, 352, 340, 333, 318, 305, 297, 284, 270, 262, 249, 231, 220, 204][(i * 7) % NOMES.length]));
+  partidas.sort((a, b) => b.total - a.total);
+  estacoes = fim ? [] : NOMES.slice(conc).map((jogador, i) => ({ id: "PC-" + i, status: "jogando", jogador, rodada: "previa", atualizado: Date.now() }));
+  recorde = { total: 512, nome: "Fernanda" }; carregadas = true;
+  desenhar();
+} else {
+if (!Banco.disponivel) document.getElementById("aviso").textContent = "Sem conexão com o banco de dados.";
+Banco.ouvirConfig((c) => {
+  cfg = c;
+  if (c.rodada?.id !== rodadaOuvida) {
+    rodadaOuvida = c.rodada?.id; partidas = []; carregadas = false; pararRodada();
+    if (rodadaOuvida) pararRodada = Banco.ouvirRodada(rodadaOuvida, (lista) => { partidas = lista; carregadas = true; desenhar(); });
+  }
+  desenhar();
+});
+Banco.ouvirEstacoes((l) => { estacoes = l; desenhar(); });
+Banco.ouvirRecorde((r) => { recorde = r; desenhar(); });
+setInterval(desenhar, 30000);   // estação sem sinal sai de "jogando" mesmo sem novidade no banco
+}
+</script>
+</body>
+</html>

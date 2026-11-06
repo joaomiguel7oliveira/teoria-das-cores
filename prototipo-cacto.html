@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Protótipo · ajustar as cores do cacto</title>
+<style>
+  :root { --ink: #16181d; --muted: #7a7a72; --line: #dcd8cf; --ok: #2d6a4f; --bad: #b4452f; --bg: #f3f1ec; --sans: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  body { height: 100dvh; background: var(--bg); color: var(--ink); font-family: var(--sans); display: flex; flex-direction: column; align-items: center; padding: clamp(10px, 2.4vh, 22px) 16px; }
+  .coluna { width: 100%; max-width: 940px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .topo { display: flex; justify-content: space-between; font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  /* controles à esquerda, imagem à direita */
+  .palco { flex: 1; min-height: 0; display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: clamp(20px, 4vw, 52px); align-items: center; margin-top: clamp(8px, 2vh, 18px); }
+  .cena { height: 100%; min-height: 0; min-width: 0; display: flex; justify-content: center; align-items: center; }
+  /* o tamanho do SVG é calculado em encaixar(), para a moldura ficar rente à ilustração */
+  .cena svg { display: block; border-radius: 4px; box-shadow: 0 0 0 1px var(--line); }
+  .cena svg path, .cena svg rect, .cena svg polygon { cursor: pointer; }
+
+  .esquerda { display: flex; flex-direction: column; gap: clamp(10px, 2.4vh, 22px); }
+  .amostras { display: flex; gap: 12px; }
+  .amostra { flex: 1; display: flex; flex-direction: column; gap: 6px; background: none; border: 0; padding: 0; cursor: pointer; font: inherit; color: inherit; }
+  .amostra .alvo { height: clamp(54px, 11vh, 90px); border-radius: 3px; outline: 3px dashed transparent; outline-offset: 5px; transition: outline-color .15s; }
+  .amostra.sel .alvo { outline-color: var(--ink); }
+  .amostra .atual { height: 12px; border-radius: 99px; box-shadow: 0 0 0 1px var(--line); }
+  .amostra .rot { font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-align: center; min-height: 1.2em; }
+  .amostra .rot.ok { color: var(--ok); } .amostra .rot.perto { color: #8a6a1f; } .amostra .rot.erro { color: var(--bad); }
+
+  .painel { display: flex; flex-direction: column; }
+  .controle { padding: 12px 0 6px; }
+  .controle .cab { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+  .controle .nome { font-size: 1.05rem; font-weight: 700; letter-spacing: -.01em; }
+  .controle .valor { font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .painel input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 14px; border-radius: 99px; outline: none; margin: 0; display: block; background: var(--faixa, #888); }
+  .painel input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; border-radius: 50%; background: #fff; border: 4px solid #16181d; cursor: grab; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+  .painel input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 4px solid #16181d; cursor: grab; }
+
+  .retorno { font-size: .88rem; line-height: 1.4; min-height: 2.8em; }
+  .retorno:empty { display: none; }
+  .btn { align-self: center; width: 220px; background: var(--ink); color: #fff; border: 0; border-radius: 4px; padding: 11px 24px; font: 700 .72rem var(--sans); letter-spacing: .18em; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+  .btn.sec { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  .passar { align-self: center; background: none; border: 0; color: var(--muted); font: 600 .72rem var(--sans); letter-spacing: .18em; text-transform: uppercase; cursor: pointer; padding: 6px 12px; }
+  .passar:hover { color: var(--ink); }
+  @media (max-width: 760px) { .palco { grid-template-columns: 1fr; overflow: auto; align-items: start; } .cena { height: 40vh; order: -1; } }
+</style>
+<style id="cores-da-cena"></style>
+</head>
+<body>
+<div class="coluna">
+  <div class="topo"><span></span><span id="nota"></span></div>
+  <div class="palco">
+    <div class="esquerda">
+      <div class="amostras" id="amostras"></div>
+      <div class="painel">
+        <div class="controle"><div class="cab"><span class="nome">Matiz</span><span class="valor" id="vh"></span></div><input type="range" id="h" min="0" max="360" step="1" aria-label="Matiz"></div>
+        <div class="controle"><div class="cab"><span class="nome">Saturação</span><span class="valor" id="vs"></span></div><input type="range" id="s" min="0" max="100" step="1" aria-label="Saturação"></div>
+        <div class="controle"><div class="cab"><span class="nome">Luminosidade</span><span class="valor" id="vb"></span></div><input type="range" id="b" min="0" max="100" step="1" aria-label="Luminosidade"></div>
+      </div>
+      <div class="retorno" id="retorno"></div>
+      <button class="btn" id="acao">Confirmar</button>
+      <button class="passar" id="passar">Passar &rsaquo;</button>
+    </div>
+    <div class="cena" id="cena" aria-label="Imagem com as cores a ajustar"></div>
+  </div>
+</div>
+
+<script src="img/embutidas/cacto.js"></script>
+<script src="pergunta.js"></script>
+<script>
+const SVG = "img/cacto.svg";
+const PROXIMA = "prototipo-neve.html";
+const HARMONIA = "triade";                 // resposta certa da pergunta depois de confirmar (ver pergunta.js)
+const FIXAS = [{ c: "cls-5", hex: "#c3be74" }];     // espinhos: não mudam
+// o primeiro item de cada grupo é a cor principal (a que a amostra mostra); os outros acompanham
+const GRUPOS = [
+  { nome: "frutas", cor: "vermelho", membros: [{ c: "cls-1", hex: "#d81140" }, { c: "cls-3", hex: "#73092c" }], inicio: { h: 22, s: 72, b: 86 } },
+  { nome: "cacto", cor: "verde", membros: [{ c: "cls-4", hex: "#42bc30" }, { c: "cls-2", hex: "#02470c" }], inicio: { h: 0, s: 0, b: 44 } },
+  { nome: "fundo", cor: "azul", membros: [{ c: "cls-6", hex: "#1863f2" }], inicio: { h: 224, s: 22, b: 62 } },
+];
+
+// ---------- cor: HSB (matiz 0–360°, saturação e brilho 0–100%) ----------
+function hsbParaRgb(h, s, b) {
+  h = ((h % 360) + 360) % 360; s /= 100; b /= 100;
+  const c = b * s, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = b - c;
+  const [r, g, bl] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return [r + m, g + m, bl + m].map((v) => Math.round(v * 255));
+}
+const css = ([r, g, b]) => "rgb(" + r + "," + g + "," + b + ")";
+function hexParaHsb(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  let h = 0; if (d) h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return { h: ((h * 60) + 360) % 360, s: max ? d / max * 100 : 0, b: max * 100 };
+}
+const distH = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+
+// ---------- grupos: cada ajuste (H, S, B) move a cor principal e, junto, as outras cores da mesma família ----------
+GRUPOS.forEach((g) => {
+  const ref = hexParaHsb(g.membros[0].hex);
+  g.alvo = g.membros[0].hex; g.alvoHsb = { h: Math.round(ref.h), s: Math.round(ref.s), b: Math.round(ref.b) };
+  g.membros.forEach((m) => { const c = hexParaHsb(m.hex); m.rel = { dh: c.h - ref.h, rs: ref.s ? c.s / ref.s : 1, rb: ref.b ? c.b / ref.b : 1 }; });   // relação com a principal
+  g.atual = { ...g.inicio };
+});
+const NOTA_ACERTO = 85, NOTA_PERTO = 60;
+const cena = document.getElementById("cena"), amostras = document.getElementById("amostras");
+const H = document.getElementById("h"), S = document.getElementById("s"), B = document.getElementById("b");
+const retorno = document.getElementById("retorno"), acao = document.getElementById("acao");
+let selecionado = 0, confirmada = false;
+const TEXTO_INICIAL = "";
+
+function pintar(g) {
+  const root = document.documentElement.style, c = g.atual;
+  g.membros.forEach((m) => root.setProperty("--cor-" + m.c, css(hsbParaRgb(c.h + m.rel.dh, Math.min(100, c.s * m.rel.rs), Math.min(100, c.b * m.rel.rb)))));
+}
+const atualizarChip = (i) => { amostras.children[i].querySelector(".atual").style.background = css(hsbParaRgb(GRUPOS[i].atual.h, GRUPOS[i].atual.s, GRUPOS[i].atual.b)); };
+
+function sincronizarControles() {
+  const c = GRUPOS[selecionado].atual, rgb = (h, s, b) => css(hsbParaRgb(h, s, b));
+  H.value = c.h; S.value = c.s; B.value = c.b;
+  document.getElementById("vh").textContent = Math.round(c.h) + "°"; document.getElementById("vs").textContent = Math.round(c.s) + "%"; document.getElementById("vb").textContent = Math.round(c.b) + "%";
+  H.style.setProperty("--faixa", "linear-gradient(90deg," + [0, 60, 120, 180, 240, 300, 360].map((h) => rgb(h, 100, 100)).join(",") + ")");
+  S.style.setProperty("--faixa", "linear-gradient(90deg," + rgb(c.h, 0, c.b) + "," + rgb(c.h, 100, c.b) + ")");
+  B.style.setProperty("--faixa", "linear-gradient(90deg,#000," + rgb(c.h, c.s, 100) + ")");
+}
+function selecionar(i) { selecionado = i; [...amostras.children].forEach((el, k) => el.classList.toggle("sel", k === i)); sincronizarControles(); }
+[[H, "h"], [S, "s"], [B, "b"]].forEach(([el, k]) => el.addEventListener("input", () => {
+  if (confirmada) return;
+  const g = GRUPOS[selecionado]; g.atual[k] = +el.value; pintar(g); atualizarChip(selecionado); sincronizarControles();
+}));
+
+// ---------- nota por grupo: quanto H, S e B diferem da amostra ----------
+function notaDe(g) {
+  const a = g.atual, t = g.alvoHsb;
+  const dh = distH(a.h, t.h) * Math.min(1, Math.max(a.s, t.s) / 40);        // com pouca saturação o matiz quase não aparece
+  return Math.max(0, Math.round(100 - (dh * 1.2 + Math.abs(a.s - t.s) * 0.8 + Math.abs(a.b - t.b) * 0.8)));
+}
+// ---------- imagens para a comparação depois de confirmar (ver pergunta.js) ----------
+function imagensParaComparar() {
+  const svg = cena.querySelector("svg"), els = [...svg.querySelectorAll("*")], hexDe = {};
+  GRUPOS.forEach((g) => g.membros.forEach((m) => (hexDe[m.c] = m.hex))); FIXAS.forEach((f) => (hexDe[f.c] = f.hex));
+  const versao = (original) => {                                         // copia o desenho com as cores atuais ou com as originais
+    const s = svg.cloneNode(true), copias = [...s.querySelectorAll("*")], vb = svg.viewBox.baseVal;
+    s.setAttribute("width", vb.width); s.setAttribute("height", vb.height);   // sem isso a imagem fica pequena
+    els.forEach((el, i) => { const cls = [...el.classList].find((k) => hexDe[k]); copias[i].style.fill = original && cls ? hexDe[cls] : getComputedStyle(el).fill; });
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(s));
+  };
+  return { sua: versao(false), original: versao(true), cores: GRUPOS.map((g) => ({ cor: g.alvo, nome: g.cor })) };
+}
+function confirmar() {
+  confirmada = true;
+  const notas = GRUPOS.map(notaDe);
+  notas.forEach((n, i) => { const r = amostras.children[i].querySelector(".rot"); r.className = "rot " + (n >= NOTA_ACERTO ? "ok" : n >= NOTA_PERTO ? "perto" : "erro"); r.textContent = n + " pts"; });
+  document.getElementById("nota").textContent = Math.round(notas.reduce((a, b) => a + b, 0) / notas.length) + " / 100";
+  const pior = Math.min(...notas);                                          // a mensagem olha a cor mais distante, para não ser escondida pela média
+  retorno.textContent = pior >= NOTA_ACERTO ? "Muito bem! As cores da imagem combinam com as amostras." : pior >= NOTA_PERTO ? "Quase! Alguma cor ainda está um pouco diferente da amostra." : "";
+  acao.textContent = "Tentar de novo"; acao.classList.add("sec");
+  mostrarResultado({ nota: Math.round(notas.reduce((x, y) => x + y, 0) / notas.length), mensagem: retorno.textContent, ...imagensParaComparar(), harmonia: HARMONIA, proxima: PROXIMA, grupos: GRUPOS, reiniciar });
+}
+function reiniciar() {
+  confirmada = false;
+  fecharPergunta();
+  GRUPOS.forEach((g, i) => { g.atual = { ...g.inicio }; pintar(g); atualizarChip(i); const r = amostras.children[i].querySelector(".rot"); r.textContent = ""; r.className = "rot"; });
+  document.getElementById("nota").textContent = ""; retorno.textContent = TEXTO_INICIAL;
+  acao.textContent = "Confirmar"; acao.classList.remove("sec"); selecionar(0);
+}
+acao.addEventListener("click", () => (confirmada ? reiniciar() : confirmar()));
+document.getElementById("passar").addEventListener("click", () => { location.href = PROXIMA; });   // passar: segue para a próxima imagem, sem nota
+
+// ---------- monta a tela ----------
+amostras.innerHTML = GRUPOS.map((g, i) => '<button class="amostra" data-i="' + i + '" aria-label="Amostra: ' + g.nome + '"><div class="alvo" style="background:' + g.alvo + '"></div><div class="atual"></div><div class="rot"></div></button>').join("");
+[...amostras.children].forEach((el, i) => el.addEventListener("click", () => selecionar(i)));
+// uma regra de CSS por classe do SVG: as cores vêm das variáveis (as classes fixas mantêm a cor original)
+document.getElementById("cores-da-cena").textContent = GRUPOS.flatMap((g) => g.membros.map((m) => ".cena svg ." + m.c + "{fill:var(--cor-" + m.c + ")}")).concat((FIXAS || []).map((f) => ".cena svg ." + f.c + "{fill:" + f.hex + "}")).join("");
+(window.SVG_EMBUTIDO ? Promise.resolve(window.SVG_EMBUTIDO) : fetch(SVG).then((r) => r.text())).then((txt) => {   // embutido = funciona sem servidor
+  cena.innerHTML = txt.replace(/<\?xml[^>]*\?>/, "").replace(/<style>[\s\S]*?<\/style>/, "");   // as cores vêm do CSS da página
+  const svg = cena.querySelector("svg"); svg.removeAttribute("width"); svg.removeAttribute("height");
+  svg.addEventListener("click", (e) => {                                                           // clicar numa área da imagem seleciona a amostra da família
+    const i = GRUPOS.findIndex((g) => g.membros.some((m) => e.target.classList.contains(m.c)));
+    if (i >= 0 && !confirmada) selecionar(i);
+  });
+  reiniciar();
+  encaixar();
+});
+
+// ---------- encaixa a ilustração no espaço disponível, na proporção do viewBox: a moldura fica rente ao desenho ----------
+function encaixar() {
+  const svg = cena.querySelector("svg"); if (!svg) return;
+  const vb = svg.viewBox.baseVal, r = cena.getBoundingClientRect(), k = Math.min(r.width / vb.width, (r.height - (window.LEGENDA_IMAGEM || 0)) / vb.height);   // desconta a legenda abaixo da imagem (pergunta.js)
+  if (!k) return;
+  svg.style.width = Math.floor(vb.width * k) + "px";
+  svg.style.height = Math.floor(vb.height * k) + "px";
+}
+new ResizeObserver(encaixar).observe(cena);
+</script>
+</body>
+</html>

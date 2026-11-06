@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teoria das Cores · Mundo SENAI</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* nos computadores com "reduzir movimento" ligado, o style.css desliga as animações; aqui elas ficam sempre ligadas */
+    @media (prefers-reduced-motion: reduce) {
+      .galeria-trilho { animation: passa 150s linear infinite !important; }
+      .roda { animation: gira 70s linear infinite !important; }
+      .roda-brilho { animation: gira 70s linear infinite, respira 6s ease-in-out infinite !important; }
+      .roda-fina { animation: gira 120s linear infinite reverse !important; }
+      .splash-cta { animation: pulsa 2.4s ease-in-out infinite !important; }
+      .aurora i:nth-child(1) { animation: flutua1 26s ease-in-out infinite alternate !important; }
+      .aurora i:nth-child(2) { animation: flutua2 32s ease-in-out infinite alternate !important; }
+      .aurora i:nth-child(3) { animation: flutua2 29s ease-in-out infinite alternate-reverse !important; }
+      .aurora i:nth-child(4) { animation: flutua1 35s ease-in-out infinite alternate-reverse !important; }
+    }
+    .galeria-trilho { animation-duration: 150s !important; }
+
+    /* transição ao iniciar: o círculo cresce até sair da tela enquanto o fundo clareia */
+    body { transition: background-color .6s ease, color .6s ease; }
+    .aurora { transition: opacity .6s ease; }
+    .splash.expandindo .roda-inclina { transform: scale(7) !important; transition: transform .9s cubic-bezier(.55, 0, .25, 1) !important; }
+    .splash.expandindo .splash-titulo, .splash.expandindo .galeria, .splash.expandindo .splash-evento { opacity: 0; transition: opacity .35s ease; }
+    /* abertura: "Mundo SENAI" centralizado no alto, em cima do círculo (a marca do canto fica só nas outras telas) */
+    body:has(.splash) > .marca, body:has(.splash) > .nome-jogo { display: none; }
+    body > .marca { left: auto; right: 32px; text-align: right; }
+    .nome-jogo { position: fixed; top: 28px; left: 32px; z-index: 4; margin: 0; display: flex; align-items: center; gap: 10px; font: 800 1.2rem/1 "Helvetica Neue", Helvetica, Arial, sans-serif; letter-spacing: -.02em; color: #16181d; pointer-events: none; }
+    body:not(.tema-claro) .nome-jogo { color: #fff; }
+    .local { font-weight: 400; }
+    .curso { display: block; margin-top: .6em; font-size: .5em; font-weight: 600; letter-spacing: .12em; } .curso { opacity: .75; }   /* mesma letra de MUNDO SENAI, sem negrito */
+    .splash-evento { left: 50% !important; top: clamp(18px, 4vh, 40px) !important; transform: translateX(-50%); text-align: center !important; font-size: clamp(1.4rem, 3.2vh, 2rem) !important; z-index: 3; }
+    .splash.expandindo .roda-cena { opacity: 0; transition: opacity .4s ease .5s; }
+
+    /* tela do nome no modo claro: sem linha sob o nome e "Confirmar" só como palavra */
+    body.tema-claro .aurora { opacity: 0; }
+    body.tema-claro .marca .evento { color: #b3afa6; }
+    body.tema-claro .tela-nome { animation: sobe .5s ease both; }
+    body.tema-claro .tela-nome input[type=text] { border: 0 !important; background: none; color: var(--ink); outline: none; }
+    body.tema-claro .tela-nome input[type=text]::placeholder { color: #b3afa6; }
+    body.tema-claro .tela-nome .btn { display: block; margin: 0 auto; background: none !important; color: var(--ink); padding: 8px 12px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
+    body.tema-claro .tela-nome .btn:disabled { color: #c9c5bb; background: none !important; }   /* um pouco mais rápido, para o movimento ser percebido */
+
+    /* modo telão: aviso e recorde abaixo do círculo */
+    .telao-baixo { position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 2.4vh; }
+    .aguardando { margin: 0; font-size: clamp(1rem, 2.6vh, 1.6rem); font-weight: 700; letter-spacing: .24em; text-transform: uppercase; color: rgba(255,255,255,.85); animation: pulsa 2.4s ease-in-out infinite; }
+    .recorde-telao { display: flex; align-items: baseline; gap: 14px; padding: 1.2vh 28px; border-radius: 99px; background: rgba(255,255,255,.08); color: #fff; white-space: nowrap; }
+    .recorde-telao span { font-size: clamp(.75rem, 1.6vh, .95rem); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.6); }
+    .recorde-telao b { font-size: clamp(1.6rem, 4vh, 2.6rem); letter-spacing: -.03em; } .recorde-telao em { font-style: normal; font-weight: 700; font-size: clamp(1rem, 2.2vh, 1.4rem); color: #f0a8e2; }
+    .aviso-nome { margin: 10px 0 0; min-height: 1.3em; text-align: center; font-weight: 700; color: #b4452f; }
+    .treme { animation: treme-nome .4s ease; }
+    @keyframes treme-nome { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+    /* tela 3: como jogar (sem bases brancas) */
+    .como-jogar { position: relative; z-index: 1; width: min(980px, 92vw); margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: clamp(18px, 4vh, 40px); color: var(--ink); animation: sobe .5s ease both; }
+    .como-jogar .etapa { margin: 0; font-size: .75rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: #8a877f; }
+    .como-jogar .passos { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(20px, 4vw, 48px); width: 100%; }
+    .como-jogar .passo { display: flex; flex-direction: column; gap: 12px; }
+    .como-jogar .n { width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 800; }
+    .como-jogar h3 { margin: 0; font-size: clamp(1.1rem, 2.6vh, 1.4rem); letter-spacing: -.01em; }
+    .como-jogar p { margin: 0; font-size: .95rem; line-height: 1.45; color: #4c4c46; }
+    .mini-sliders { display: flex; flex-direction: column; gap: 9px; margin: 6px 0; max-width: 220px; }
+    .mini-sliders i { display: block; height: 8px !important; min-height: 8px; flex: none; border-radius: 99px; position: relative; }
+    .mini-sliders i::after { content: ""; position: absolute; top: 50%; left: var(--x); width: 15px; height: 15px; border-radius: 50%; background: #fff; border: 3px solid var(--ink); transform: translate(-50%, -50%); }
+    .mini-harm { display: flex; gap: 10px; margin: 4px 0; } .mini-harm svg { width: 40px; height: 40px; }
+    .mini-harm .r { fill: none; stroke: #c8c4ba; stroke-width: 3; } .mini-harm .l { fill: none; stroke: var(--ink); stroke-width: 2.6; } .mini-harm .p { fill: var(--ink); }
+    .mini-tempo { display: flex; align-items: center; gap: 10px; margin: 6px 0; font-weight: 700; }
+    .anel-mini { width: 34px; height: 34px; border-radius: 50%; background: conic-gradient(var(--ink) 70%, #dcd8cf 0); -webkit-mask: radial-gradient(circle, transparent 56%, #000 58%); mask: radial-gradient(circle, transparent 56%, #000 58%); }
+    body.tema-claro .como-jogar .btn { background: none !important; color: var(--ink); font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
+    .como-jogar .btn span { color: #b3afa6; margin-left: 6px; font-variant-numeric: tabular-nums; }
+    @media (max-width: 760px) { .como-jogar .passos { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="aurora" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  <p class="nome-jogo">Teoria das Cores</p>
+  <header class="marca"><span class="evento">Mundo SENAI <span class="local">| Sobradinho</span><span class="curso">Técnico em Design Gráfico</span></span></header>
+  <main id="app"></main>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="banco.js"></script>
+<script>
+// Tela 1: abertura · Tela 2: nome · Tela 3: como jogar · depois, as fases sorteadas (quantas e quais: painel do moderador).
+let CONFIG = typeof Banco !== "undefined" ? Banco.configLocal() : {};
+if (typeof Banco !== "undefined") Banco.atualizarConfig().then((c) => { CONFIG = c; });   // atualiza as regras em segundo plano
+
+// As fases do jogo: a mesma lista de ORDEM_JOGO em pergunta.js, com a imagem de cada uma (para a galeria de fundo)
+const FASES = {
+  "prototipo-neve": "img/paisagem-neve.webp", "prototipo-casa": "img/casa-vermelha.webp", "prototipo-ninfeias": "img/ninfeias.jpg",
+  "prototipo-rita-lee": "img/capa-rita-lee.jpg", "prototipo-cacto": "img/cacto.svg", "prototipo-pooh": "img/pooh.jpg",
+  "prototipo-burger-king": "img/burger-king.jpg", "prototipo-snoopy": "img/snoopy.jpg", "prototipo-perry": "img/perry.jpg",
+  "prototipo-victorias-secret": "img/victorias-secret.jpg", "prototipo-menina-afega": "img/menina-afega.jpg", "prototipo-lego": "img/lego.jpg",
+};
+const app = document.getElementById("app");
+const MODO_TELAO = location.hash === "#telao";
+
+function telaInicial() {
+  const fotos = Object.values(FASES);
+  const galeria = Array.from({ length: 3 }, () => fotos).flat().map((src) => `<img src="${src}" alt="">`).join("");
+  app.innerHTML = `<div class="splash" id="splash" role="button" tabindex="0" aria-label="Iniciar jogo">
+    <div class="galeria" aria-hidden="true"><div class="galeria-trilho">${galeria}</div></div>
+    <div class="splash-evento"><b>Mundo SENAI</b> <span class="local">| Sobradinho</span><span class="curso">Técnico em Design Gráfico</span></div>
+    <div class="roda-cena">
+      <div class="roda-inclina" id="inclina">
+        <div class="roda-brilho"></div>
+        <div class="roda"></div>
+        <div class="roda-fina"></div>
+      </div>
+      <div class="splash-titulo">
+        <h1>Teoria<br>das Cores</h1>
+        <div class="splash-cta">Iniciar Jogo</div>
+      </div>
+    </div>
+  </div>`;
+  const splash = document.getElementById("splash"), inclina = document.getElementById("inclina");
+  splash.addEventListener("mousemove", (e) => {
+    const x = e.clientX / innerWidth - 0.5, y = e.clientY / innerHeight - 0.5;
+    inclina.style.transform = `rotateY(${x * 14}deg) rotateX(${-y * 14}deg)`;
+  });
+  let saiu = false;
+  const iniciar = () => {
+    if (saiu) return; saiu = true;
+    inclina.style.transform = "";                                       // tira a inclinação do mouse antes de crescer
+    splash.classList.add("expandindo");
+    setTimeout(() => document.body.classList.add("tema-claro"), 450);  // o fundo clareia no meio do crescimento
+    setTimeout(telaNome, 950);
+  };
+  if (MODO_TELAO) return modoTelao();
+  splash.addEventListener("click", iniciar);
+  splash.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") iniciar(); });
+  splash.focus();
+}
+
+// ---------- filtro de nomes impróprios (o nome vai para o telão) ----------
+// Normaliza (minúsculas, sem acento, 0→o, 1→i, 3→e, 4→a, 5→s, @→a, só letras, sem letras repetidas) e procura:
+// palavras longas em qualquer parte do nome; siglas curtas só como palavra inteira (para não barrar nomes como "Jacu" ou "Pinto").
+const NOMES_PROIBIDOS = ["porra", "caralh", "buceta", "boceta", "xoxota", "xereca", "piroca", "merda", "bosta", "foder", "fodid", "foda", "fude", "puta", "putinh",
+  "cacete", "viad", "arromb", "babaca", "otari", "imbecil", "idiota", "cuzao", "cusao", "cuzin", "corno", "vagabund", "piranha", "safad", "punhet", "siririca",
+  "penis", "vagina", "estupr", "nazis", "hitler", "retardad", "porno", "xvideo", "macaco", "chupa", "rapariga", "quenga"];
+const SIGLAS_PROIBIDAS = ["cu", "fdp", "pqp", "vsf", "tnc", "vtnc", "krl", "crl", "bct", "pnc", "tmnc", "sexo", "rola", "pau", "pica"];
+function normalizarNome(t) {
+  return t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[0134579@$]/g, (c) => ({ 0: "o", 1: "i", 3: "e", 4: "a", 5: "s", 7: "t", 9: "g", "@": "a", $: "s" }[c]));
+}
+const semRepetidas = (t) => t.replace(/(.)\1+/g, "$1");
+function nomeImproprio(nome) {
+  const n = normalizarNome(nome), junto = semRepetidas(n.replace(/[^a-z]/g, ""));
+  if (NOMES_PROIBIDOS.some((p) => junto.includes(semRepetidas(p)))) return true;
+  return n.split(/[^a-z]+/).filter(Boolean).map(semRepetidas).some((w) => SIGLAS_PROIBIDAS.includes(w));
+}
+
+function telaNome() {
+  app.innerHTML = `<div class="tela-nome">
+    <input id="nome" type="text" maxlength="14" placeholder="Digite seu nome" autocomplete="off" aria-label="Seu nome">
+    <button class="btn" id="continuar" disabled>Confirmar</button>
+  </div>`;
+  const campo = document.getElementById("nome"), botao = document.getElementById("continuar");
+  const aviso = document.createElement("p"); aviso.className = "aviso-nome"; campo.after(aviso);
+  let conferindo = false;
+  const recusar = (texto) => {
+    aviso.textContent = texto;
+    campo.classList.remove("treme"); void campo.offsetWidth; campo.classList.add("treme");
+    campo.select();
+  };
+  const seguir = async () => {
+    const nome = campo.value.trim();
+    if (!nome || conferindo) return;
+    if (nomeImproprio(nome)) return recusar("Escolha outro nome, por favor.");
+    // nome repetido na mesma rodada: o ranking ficaria confuso
+    conferindo = true; botao.disabled = true;
+    const repetido = typeof Banco !== "undefined" && await Banco.nomeEmUso(nome);
+    conferindo = false; botao.disabled = false;
+    if (repetido) return recusar("Esse nome já está nesta rodada. Use o sobrenome ou uma inicial.");
+    try { sessionStorage.setItem("jogador", nome); sessionStorage.setItem("jogando", "1"); } catch {}   // "jogando": desliga a demonstração
+    if (typeof Banco !== "undefined") Banco.informarEstacao("jogando", nome);
+    telaComoJogar();
+  };
+  campo.addEventListener("input", () => { botao.disabled = !campo.value.trim(); aviso.textContent = ""; });
+  campo.addEventListener("keydown", (e) => { if (e.key === "Enter") seguir(); });
+  botao.addEventListener("click", seguir);
+  campo.focus();
+}
+
+// Tela 3: como jogar (três passos curtos). Passa sozinha ou ao tocar em "Começar".
+function telaComoJogar() {
+  const n = (CONFIG.fasesAtivas || Object.keys(FASES)).filter((p) => FASES[p]).length || Object.keys(FASES).length;
+  const seg = CONFIG.tempoComoJogar || 15;
+  app.innerHTML = `<div class="como-jogar">
+    <p class="etapa">Como jogar · ${n} fases</p>
+    <div class="passos">
+      <div class="passo"><span class="n">1</span>
+        <div class="mini-sliders"><i style="background:linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);--x:30%"></i><i style="background:linear-gradient(90deg,#ccc,#0247fe);--x:72%"></i><i style="background:linear-gradient(90deg,#000,#7aa6ff);--x:58%"></i></div>
+        <h3>Ajuste as cores</h3><p>Mexa em matiz, saturação e luminosidade até cada cor ficar igual à amostra.</p></div>
+      <div class="passo"><span class="n">2</span>
+        <div class="mini-harm">
+          <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" class="r"/><polyline points="50,12 50,88" class="l"/><circle cx="50" cy="12" r="7" class="p"/><circle cx="50" cy="88" r="7" class="p"/></svg>
+          <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" class="r"/><polygon points="50,12 83,69 17,69" class="l"/><circle cx="50" cy="12" r="7" class="p"/><circle cx="83" cy="69" r="7" class="p"/><circle cx="17" cy="69" r="7" class="p"/></svg>
+          <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" class="r"/><polyline points="31,17 50,12 69,17" class="l"/><circle cx="31" cy="17" r="7" class="p"/><circle cx="50" cy="12" r="7" class="p"/><circle cx="69" cy="17" r="7" class="p"/></svg>
+        </div>
+        <h3>Identifique a harmonia</h3><p>Veja as cores da imagem e escolha a combinação: complementar, análoga, tríade…</p></div>
+      <div class="passo"><span class="n">3</span>
+        <div class="mini-tempo"><span class="anel-mini"></span> Cada fase tem tempo</div>
+        <h3>Some pontos</h3><p>Quanto mais perto da cor e da harmonia certas, mais pontos — e seu nome vai para o ranking.</p></div>
+    </div>
+    <button class="btn" id="comecar">Começar <span id="seg-comecar">${seg}</span></button>
+  </div>`;
+  let falta = seg;
+  const t = setInterval(() => { falta--; const el = document.getElementById("seg-comecar"); if (el) el.textContent = falta; if (falta <= 0) { clearInterval(t); comecarJogo(); } }, 1000);
+  document.getElementById("comecar").addEventListener("click", () => { clearInterval(t); comecarJogo(); });
+}
+
+// Nova partida: todos jogam as MESMAS fases (as marcadas no painel, para o jogo ser justo); "sortear" só embaralha a ordem
+function sortearPartida() {
+  const ativas = (CONFIG.fasesAtivas || Object.keys(FASES)).filter((p) => FASES[p]);
+  const lista = ativas.length ? [...ativas] : Object.keys(FASES);
+  if (CONFIG.sortear !== false) for (let i = lista.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [lista[i], lista[j]] = [lista[j], lista[i]]; }
+  return lista;
+}
+// Modo telão (inicio.html#telao, aberto pelo telao.html quando não há rodada): a mesma abertura, sem clique,
+// com "Aguardando a próxima rodada" no lugar de "Iniciar jogo" e o recorde do evento. Não conta como estação.
+function modoTelao() {
+  document.body.classList.add("modo-telao");
+  document.getElementById("splash").removeAttribute("role");
+  document.querySelector(".splash-cta").remove();                       // o aviso vai para baixo do círculo
+  const baixo = document.createElement("div"); baixo.className = "telao-baixo";
+  baixo.innerHTML = `<p class="aguardando">Aguardando a próxima rodada</p><div class="recorde-telao"><span>Recorde do evento</span><b>—</b><em>ainda sem recorde</em></div>`;
+  document.getElementById("splash").append(baixo);
+  if (typeof Banco !== "undefined") Banco.ouvirRecorde((r) => {
+    baixo.querySelector(".recorde-telao b").textContent = r ? r.total : "—";
+    baixo.querySelector(".recorde-telao em").textContent = r ? r.nome : "ainda sem recorde";
+  });
+}
+let comecou = false;
+function comecarJogo() {
+  if (comecou) return; comecou = true;
+  const ordem = sortearPartida();
+  try { sessionStorage.setItem("ordem_fases", JSON.stringify(ordem)); sessionStorage.removeItem("resultados"); } catch {}
+  document.body.style.transition = "opacity .4s"; document.body.style.opacity = "0";
+  setTimeout(() => { location.href = ordem[0] + ".html"; }, 400);
+}
+
+telaInicial();
+
+// Demonstração: só na guia aberta pelo botão "Abrir demonstração" do painel (inicio.html#demo).
+// Começa logo ao abrir; se alguém tocar e não jogar, volta a demonstrar depois de um tempo parado na tela inicial.
+const TEMPO_SEM_NINGUEM = 40;   // segundos
+try { sessionStorage.removeItem("jogando"); localStorage.removeItem("modo_simulacao"); } catch {}
+const pedidoDemo = !MODO_TELAO && (location.hash === "#demo" || new URLSearchParams(location.search).has("demo"));
+if (pedidoDemo) history.replaceState(null, "", location.pathname);   // tira o #demo da barra
+if (pedidoDemo) try { sessionStorage.setItem("demo", "1"); } catch {}
+let simLigada = false;
+try { simLigada = !MODO_TELAO && sessionStorage.getItem("demo") === "1"; } catch {}
+// Estação: avisa o banco que este PC está livre (ou em demonstração), tenta reenviar partidas presas e repete a cada 2 min
+if (typeof Banco !== "undefined" && !MODO_TELAO) {
+  const avisar = () => Banco.enviarFila().finally(() => Banco.informarEstacao(simLigada ? "demo" : "livre", ""));
+  avisar(); setInterval(avisar, 120000);
+}
+function demonstrar() {
+  const ordem = sortearPartida();
+  try { sessionStorage.removeItem("jogando"); sessionStorage.setItem("ordem_fases", JSON.stringify(ordem)); } catch {}
+  location.href = ordem[0] + ".html";
+}
+if (pedidoDemo) setTimeout(demonstrar, 2500);           // aberta agora pelo painel: começa direto
+else if (simLigada) {
+  let parado = 0;
+  ["pointerdown", "pointermove", "keydown", "input"].forEach((t) => addEventListener(t, () => { parado = 0; }, true));
+  setInterval(() => { parado += 5; if (parado >= TEMPO_SEM_NINGUEM) demonstrar(); }, 5000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Opções de layout · Telão do ranking</title>
+<!-- Página de escolha (não faz parte do jogo): 4 layouts do telão com dados de exemplo, cada um num quadro 16:9 -->
+<style>
+  :root { --ink: #16181d; --muted: #7a7a72; --line: #dcd8cf; --bg: #f6f4ef; --senai: #b5179e; --sans: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e9e6df; color: var(--ink); font-family: var(--sans); }
+  header.topo { padding: 28px 40px 8px; max-width: 1400px; margin: 0 auto; }
+  header.topo h1 { margin: 0 0 6px; font-size: 1.5rem; letter-spacing: -.02em; }
+  header.topo p { margin: 0; color: var(--muted); }
+  .opcoes { max-width: 1400px; margin: 0 auto; padding: 20px 40px 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 36px 32px; }
+  .opcao h2 { margin: 0 0 4px; font-size: 1.05rem; } .opcao h2 b { color: var(--senai); margin-right: 6px; }
+  .opcao p { margin: 0 0 12px; font-size: .88rem; color: #55534d; line-height: 1.4; }
+  .quadro { width: 100%; aspect-ratio: 16 / 9; position: relative; overflow: hidden; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.06); background: var(--bg); }
+  .tela { position: absolute; top: 0; left: 0; width: 1600px; height: 900px; transform-origin: 0 0; background: var(--bg); }
+  @media (max-width: 900px) { .opcoes { grid-template-columns: 1fr; } }
+
+  /* comum às telas */
+  .tela .marca { position: absolute; top: 36px; left: 48px; margin: 0; font: italic 900 2.1rem/.92 var(--sans); text-transform: uppercase; }
+  .tela .marca span { display: block; } .tela .marca span + span { color: var(--senai); }
+  .tela h3 { margin: 0; letter-spacing: -.035em; }
+  .tela .sub { font-size: 1rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  .tela ol { list-style: none; margin: 0; padding: 0; }
+  .ouro { color: #c9a227; } .prata { color: #9aa0a6; } .bronze { color: #b0703c; }
+  .tela .vazio { color: #c4c0b6; }
+
+  /* A · atual, sem o círculo */
+  .a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 40px 70px; }
+  .a h3 { font-size: 3.6rem; }
+  .a .rec { display: flex; align-items: center; gap: 22px; padding: 12px 34px; border-radius: 99px; background: var(--ink); color: #fff; }
+  .a .rec small { font-size: .9rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: #c9c5bb; } .a .rec b { font-size: 2.4rem; } .a .rec em { font-style: normal; font-size: 1.15rem; font-weight: 600; }
+  .a ol { width: 1300px; display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: column; grid-template-rows: repeat(10, auto); column-gap: 60px; row-gap: 6px; }
+  .a li { display: grid; grid-template-columns: 3.2em 1fr 4em; padding: 7px 18px; border-radius: 10px; font-size: 1.45rem; background: #fff; box-shadow: 0 0 0 1px var(--line); }
+  .a li b:first-child { color: var(--muted); } .a li .p { text-align: right; font-weight: 900; } .a li span { font-weight: 700; }
+
+  /* B · pódio */
+  .b { padding: 36px 60px; display: grid; grid-template-rows: auto auto 1fr; gap: 18px; }
+  .b .cab { text-align: center; } .b h3 { font-size: 3rem; } .b .sub { margin-top: 6px; }
+  .b .rec { position: absolute; top: 40px; right: 48px; text-align: right; } .b .rec small { display: block; font-size: .85rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); } .b .rec b { font-size: 2.6rem; color: var(--senai); } .b .rec em { display: block; font-style: normal; font-weight: 700; }
+  .b .podio { display: flex; justify-content: center; align-items: flex-end; gap: 24px; }
+  .b .degrau { width: 300px; text-align: center; }
+  .b .degrau .nome { font-size: 1.7rem; font-weight: 800; margin-bottom: 4px; } .b .degrau .pts { font-size: 1.3rem; font-weight: 700; color: var(--muted); margin-bottom: 10px; }
+  .b .bloco { border-radius: 14px 14px 0 0; display: grid; place-items: center; font: 900 3.4rem var(--sans); color: #fff; }
+  .b .d1 .bloco { height: 160px; background: var(--ink); } .b .d2 .bloco { height: 115px; background: #55534d; } .b .d3 .bloco { height: 85px; background: #8a877f; }
+  .b .d1 .nome { font-size: 2.2rem; }
+  .b ol { display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-flow: column; grid-template-rows: repeat(6, auto); gap: 4px 40px; align-content: start; padding-top: 10px; border-top: 2px solid var(--ink); }
+  .b li { display: grid; grid-template-columns: 2.6em 1fr 3.4em; font-size: 1.25rem; padding: 6px 4px; border-bottom: 1px solid var(--line); }
+  .b li b:first-child { color: var(--muted); } .b li .p { text-align: right; font-weight: 900; } .b li span { font-weight: 700; }
+
+  /* C · faixa lateral */
+  .c { display: grid; grid-template-columns: 470px 1fr; }
+  .c .lado { background: var(--ink); color: #fff; padding: 140px 48px 48px; display: flex; flex-direction: column; gap: 26px; }
+  .c .lado .marca { color: #fff; } .c .lado .marca span:first-child { color: #fff; }
+  .c .lado h3 { font-size: 3.4rem; line-height: 1; } .c .lado .sub { color: #a9a59c; }
+  .c .lado .rec { margin-top: auto; border-top: 1px solid #3a3c42; padding-top: 24px; } .c .rec small { font-size: .85rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: #a9a59c; }
+  .c .rec b { display: block; font-size: 5.4rem; line-height: 1; letter-spacing: -.04em; color: #fff; } .c .rec em { font-style: normal; font-size: 1.5rem; font-weight: 700; color: #f0a8e2; }
+  .c .lado .jog { font-size: 1.1rem; color: #c9c5bb; } .c .lado .jog b { color: #fff; font-size: 2rem; display: block; }
+  .c ol { padding: 48px 56px; display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: column; grid-template-rows: repeat(10, 1fr); gap: 0 48px; }
+  .c li { display: grid; grid-template-columns: 2.6em 1fr 3.6em; align-items: center; font-size: 1.5rem; border-bottom: 1px solid var(--line); }
+  .c li b:first-child { color: var(--muted); } .c li .p { text-align: right; font-weight: 900; } .c li span { font-weight: 700; }
+  .c li:nth-child(-n+3) { font-size: 1.75rem; }
+
+  /* D · líder em destaque */
+  .d { padding: 36px 60px; display: grid; grid-template-rows: auto auto 1fr auto; gap: 16px; }
+  .d .cab { text-align: center; } .d h3 { font-size: 2.6rem; }
+  .d .lider { margin: 0 auto; display: flex; align-items: center; gap: 36px; padding: 18px 48px; border-radius: 22px; background: #fff; box-shadow: 0 0 0 1px var(--line), 0 14px 40px rgba(0,0,0,.08); }
+  .d .lider .coroa { font: 900 4.4rem var(--sans); color: #c9a227; } .d .lider .nome { font-size: 3.2rem; font-weight: 900; letter-spacing: -.03em; } .d .lider .pts { font-size: 3.2rem; font-weight: 900; color: var(--senai); }
+  .d .lider small { display: block; font-size: .85rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  .d ol { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-flow: column; grid-template-rows: repeat(5, auto); gap: 8px 22px; align-content: start; }
+  .d li { display: grid; grid-template-columns: 2.4em 1fr 3em; padding: 8px 14px; border-radius: 10px; background: #fff; box-shadow: 0 0 0 1px var(--line); font-size: 1.2rem; }
+  .d li b:first-child { color: var(--muted); } .d li .p { text-align: right; font-weight: 900; } .d li span { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .d .rodape { display: flex; justify-content: center; gap: 18px; align-items: baseline; font-size: 1.1rem; color: var(--muted); } .d .rodape b { color: var(--ink); font-size: 1.6rem; } .d .rodape em { font-style: normal; color: var(--senai); font-weight: 700; }
+</style>
+</head>
+<body>
+<header class="topo">
+  <h1>Telão do ranking · escolha um layout</h1>
+  <p>Todos sem o círculo cromático, com dados de exemplo (20 jogadores). Diga a letra da opção escolhida, ou o que quer combinar entre elas.</p>
+</header>
+<div class="opcoes" id="opcoes"></div>
+
+<script>
+const NOMES = ["Ana Clara", "Pedro", "Larissa", "João Vitor", "Mariana", "Gabriel", "Sofia", "Lucas", "Beatriz", "Rafael", "Isabela", "Matheus", "Júlia", "Enzo", "Lívia", "Davi", "Helena", "Arthur", "Valentina", "Miguel"];
+const PTS = [462, 448, 431, 420, 409, 397, 388, 371, 365, 352, 340, 333, 318, 305, 297, 284, 270, 262, 249, 231];
+const J = NOMES.map((n, i) => ({ n, p: PTS[i] }));
+const marca = `<p class="marca"><span>Mundo</span><span>SENAI</span></p>`;
+const cls = (i) => ["ouro", "prata", "bronze"][i] || "";
+const item = (j, i) => `<li><b class="${cls(i)}">${i + 1}º</b><span>${j.n}</span><b class="p">${j.p}</b></li>`;
+
+const OPCOES = [
+  { letra: "A", nome: "Atual, sem o círculo", desc: "O telão de hoje: título no meio, recorde numa pílula preta e os 20 em duas colunas de cartões.",
+    html: `<div class="tela a">${marca}<h3>Ranking · Teoria das Cores</h3><div class="sub">Rodada 3 · 10h40 · 20 jogadores</div>
+      <div class="rec"><small>Recorde do evento</small><b>512</b><em>Fernanda</em></div><ol>${J.map(item).join("")}</ol></div>` },
+  { letra: "B", nome: "Pódio", desc: "Os 3 primeiros num pódio grande, que chama atenção de longe; do 4º ao 20º numa lista em 3 colunas. Recorde no canto superior direito.",
+    html: `<div class="tela b">${marca}<div class="rec"><small>Recorde do evento</small><b>512</b><em>Fernanda</em></div>
+      <div class="cab"><h3>Ranking · Teoria das Cores</h3><div class="sub">Rodada 3 · 10h40 · 20 jogadores</div></div>
+      <div class="podio">${[1, 0, 2].map((i) => `<div class="degrau d${i + 1}"><div class="nome">${J[i].n}</div><div class="pts">${J[i].p} pts</div><div class="bloco">${i + 1}º</div></div>`).join("")}</div>
+      <ol>${J.slice(3).map((j, k) => item(j, k + 3)).join("")}</ol></div>` },
+  { letra: "C", nome: "Faixa lateral", desc: "Uma faixa escura à esquerda com a marca, a rodada, o número de jogadores e o recorde em número grande; à direita, a lista limpa dos 20, sem cartões.",
+    html: `<div class="tela c"><div class="lado">${marca}<h3>Ranking<br>Teoria das Cores</h3><div class="sub">Rodada 3 · 10h40</div>
+      <div class="jog"><b>20</b>jogadores nesta rodada</div>
+      <div class="rec"><small>Recorde do evento</small><b>512</b><em>Fernanda</em></div></div><ol>${J.map(item).join("")}</ol></div>` },
+  { letra: "D", nome: "Líder em destaque", desc: "O 1º lugar num cartão grande no topo; do 2º ao 20º numa grade compacta de 4 colunas. O recorde fica numa linha discreta no rodapé.",
+    html: `<div class="tela d">${marca}<div class="cab"><h3>Ranking · Teoria das Cores</h3><div class="sub">Rodada 3 · 10h40 · 20 jogadores</div></div>
+      <div class="lider"><span class="coroa">1º</span><div><small>Liderando a rodada</small><div class="nome">${J[0].n}</div></div><div class="pts">${J[0].p}</div></div>
+      <ol>${J.slice(1).map((j, k) => item(j, k + 1)).join("")}</ol>
+      <div class="rodape">Recorde do evento <b>512</b> <em>Fernanda</em></div></div>` },
+];
+
+document.getElementById("opcoes").innerHTML = OPCOES.map((o) => `<section class="opcao"><h2><b>${o.letra}</b>${o.nome}</h2><p>${o.desc}</p><div class="quadro">${o.html}</div></section>`).join("");
+const encaixar = () => document.querySelectorAll(".quadro").forEach((q) => { q.firstElementChild.style.transform = `scale(${q.clientWidth / 1600})`; });
+addEventListener("resize", encaixar); encaixar();
+</script>
+</body>
+</html>

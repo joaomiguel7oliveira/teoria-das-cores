@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Protótipo · ajustar as cores do Ursinho Pooh</title>
+<style>
+  :root { --ink: #16181d; --muted: #7a7a72; --line: #dcd8cf; --ok: #2d6a4f; --bad: #b4452f; --bg: #f3f1ec; --sans: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  body { height: 100dvh; background: var(--bg); color: var(--ink); font-family: var(--sans); display: flex; flex-direction: column; align-items: center; padding: clamp(10px, 2.4vh, 22px) 16px; }
+  .coluna { width: 100%; max-width: 940px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .topo { display: flex; justify-content: space-between; font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  /* controles à esquerda, imagem à direita */
+  .palco { flex: 1; min-height: 0; display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: clamp(20px, 4vw, 52px); align-items: center; margin-top: clamp(8px, 2vh, 18px); }
+  .cena { height: 100%; min-height: 0; min-width: 0; display: flex; justify-content: center; align-items: center; }
+  .cena canvas { display: block; border-radius: 4px; box-shadow: 0 0 0 1px var(--line); cursor: pointer; }
+
+  .quadro { position: relative; display: flex; }
+  .moldura.oculta { opacity: 0; }
+  .moldura { position: absolute; pointer-events: none; border: 2px solid #fff; border-radius: 2px; box-shadow: 0 0 0 1.5px #16181d, inset 0 0 0 1.5px #16181d; transition: left .25s, top .25s, width .25s, height .25s, opacity .2s; }
+  .esquerda { display: flex; flex-direction: column; gap: clamp(10px, 2.4vh, 22px); }
+  .amostras { display: flex; gap: 10px; }
+  .amostra { flex: 1; display: flex; flex-direction: column; gap: 6px; background: none; border: 0; padding: 0; cursor: pointer; font: inherit; color: inherit; }
+  /* a amostra é um trecho da própria imagem original, em torno de um ponto de referência */
+  .amostra canvas { width: 100%; aspect-ratio: 4 / 3; border-radius: 3px; outline: 3px dashed transparent; outline-offset: 5px; transition: outline-color .15s; display: block; }
+  .amostra.sel canvas { outline-color: var(--ink); }
+  .amostra .atual { height: 12px; border-radius: 99px; box-shadow: 0 0 0 1px var(--line); }
+  .amostra .rot { font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-align: center; min-height: 1.2em; }
+  .amostra .rot.ok { color: var(--ok); } .amostra .rot.perto { color: #8a6a1f; } .amostra .rot.erro { color: var(--bad); }
+
+  .painel { display: flex; flex-direction: column; }
+  .controle { padding: 12px 0 6px; }
+  .controle .cab { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+  .controle .nome { font-size: 1.05rem; font-weight: 700; letter-spacing: -.01em; }
+  .controle .valor { font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .painel input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 14px; border-radius: 99px; outline: none; margin: 0; display: block; background: var(--faixa, #888); }
+  .painel input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; border-radius: 50%; background: #fff; border: 4px solid #16181d; cursor: grab; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+  .painel input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 4px solid #16181d; cursor: grab; }
+
+  .retorno { font-size: .88rem; line-height: 1.4; min-height: 2.8em; }
+  .retorno:empty { display: none; }
+  .btn { align-self: center; width: 220px; background: var(--ink); color: #fff; border: 0; border-radius: 4px; padding: 11px 24px; font: 700 .72rem var(--sans); letter-spacing: .18em; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+  .btn.sec { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  .passar { align-self: center; background: none; border: 0; color: var(--muted); font: 600 .72rem var(--sans); letter-spacing: .18em; text-transform: uppercase; cursor: pointer; padding: 6px 12px; }
+  .passar:hover { color: var(--ink); }
+  @media (max-width: 760px) { .palco { grid-template-columns: 1fr; overflow: auto; align-items: start; } .cena { height: 40vh; order: -1; } }
+</style>
+</head>
+<body>
+<div class="coluna">
+  <div class="topo"><span></span><span id="nota"></span></div>
+  <div class="palco">
+    <div class="esquerda">
+      <div class="amostras" id="amostras"></div>
+      <div class="painel">
+        <div class="controle"><div class="cab"><span class="nome">Matiz</span><span class="valor" id="vh"></span></div><input type="range" id="h" min="0" max="360" step="1" aria-label="Matiz"></div>
+        <div class="controle"><div class="cab"><span class="nome">Saturação</span><span class="valor" id="vs"></span></div><input type="range" id="s" min="0" max="100" step="1" aria-label="Saturação"></div>
+        <div class="controle"><div class="cab"><span class="nome">Luminosidade</span><span class="valor" id="vb"></span></div><input type="range" id="b" min="0" max="100" step="1" aria-label="Luminosidade"></div>
+      </div>
+      <div class="retorno" id="retorno"></div>
+      <button class="btn" id="acao">Confirmar</button>
+      <button class="passar" id="passar">Passar &rsaquo;</button>
+    </div>
+    <div class="cena"><div class="quadro"><canvas id="tela" aria-label="Ursinho Pooh com camiseta vermelha, com as cores a ajustar"></canvas><div class="moldura" id="moldura"></div></div></div>
+  </div>
+</div>
+
+<script src="img/embutidas/pooh.js"></script>
+<script src="pergunta.js"></script>
+<script>
+const FOTO = "img/pooh.jpg";
+const PROXIMA = "prototipo-neve.html";        // a ordem real das fases é sorteada (pergunta.js)
+const HARMONIA = "analoga";                 // resposta certa da pergunta depois de confirmar (ver pergunta.js)
+const TAMANHO = 520;                        // lado, em pixels, da imagem de trabalho (menor = mais rápido ao arrastar)
+// Esta imagem tem 2 ajustes. Cada grupo é achado pela faixa de matiz (graus) da imagem original:
+//   "matiz": [de, até]; a amostra é um trecho da própria imagem em torno de um ponto de referência, com objetos e tudo:
+//   "trecho": [x, y, largura, altura] em frações da imagem 
+const GRUPOS = [
+  { nome: "amarelo-alaranjado", matiz: [17, 58], trecho: [0.252, 0.57, 0.403, 0.16], inicio: { h: 200, s: 60, b: 75 } },   // corpo
+  { nome: "vermelho", matiz: [340, 10], trecho: [0.328, 0.375, 0.403, 0.16], inicio: { h: 150, s: 55, b: 60 } }   // camiseta
+];
+
+// ---------- cor ----------
+function hsbParaRgb(h, s, b) {
+  h = ((h % 360) + 360) % 360;
+  const c = b * s, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = b - c;
+  const [r, g, bl] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return [(r + m) * 255, (g + m) * 255, (bl + m) * 255];
+}
+function rgbParaHsb(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  let h = 0; if (d) h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [((h * 60) + 360) % 360, max ? d / max : 0, max];
+}
+const css = (rgb) => "rgb(" + rgb.map(Math.round).join(",") + ")";
+const distH = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+const dentro = (h, [de, ate]) => (de <= ate ? h >= de && h <= ate : h >= de || h <= ate);
+const distFaixa = (h, [de, ate]) => (dentro(h, [de, ate]) ? 0 : Math.min(distH(h, de), distH(h, ate)));
+
+const tela = document.getElementById("tela"), ctx = tela.getContext("2d", { willReadFrequently: true });
+const amostras = document.getElementById("amostras"), retorno = document.getElementById("retorno"), acao = document.getElementById("acao");
+const H = document.getElementById("h"), S = document.getElementById("s"), B = document.getElementById("b");
+let img, orig, saida, PH, PS, PV, selecionado = 0, confirmada = false;
+const TEXTO_INICIAL = "";
+const NOTA_ACERTO = 85, NOTA_PERTO = 60;
+
+// ---------- prepara a imagem: acha, pixel a pixel, a que grupo cada cor pertence (peso de 0 a 1) ----------
+function preparar() {
+  const k = TAMANHO / Math.max(img.naturalWidth, img.naturalHeight);
+  tela.width = Math.round(img.naturalWidth * k); tela.height = Math.round(img.naturalHeight * k);
+  ctx.drawImage(img, 0, 0, tela.width, tela.height);
+  orig = ctx.getImageData(0, 0, tela.width, tela.height);
+  saida = ctx.createImageData(tela.width, tela.height); saida.data.set(orig.data);
+  const n = tela.width * tela.height; PH = new Float32Array(n); PS = new Float32Array(n); PV = new Float32Array(n);
+  GRUPOS.forEach((g) => { g.peso = new Float32Array(n); g.lista = []; const m = { x: 0, y: 0, s: 0, v: 0, w: 0 }; g.ref = m; });
+  for (let i = 0; i < n; i++) {
+    const [h, s, v] = rgbParaHsb(orig.data[i * 4], orig.data[i * 4 + 1], orig.data[i * 4 + 2]);
+    PH[i] = h; PS[i] = s; PV[i] = v;
+    GRUPOS.forEach((g) => {
+      const wh = Math.max(0, 1 - distFaixa(h, g.matiz) / 22);                   // dentro da faixa = 1; some a 22° de fora
+      const w = wh * Math.min(1, Math.max(0, (s - 0.08) / 0.22)) * Math.min(1, Math.max(0, (v - 0.05) / 0.15));
+      if (w > 0.02) {
+        g.peso[i] = w; g.lista.push(i);
+        if (w > 0.5) { const m = g.ref; m.x += Math.cos(h * Math.PI / 180) * w; m.y += Math.sin(h * Math.PI / 180) * w; m.s += s * w; m.v += v * w; m.w += w; }
+      }
+    });
+  }
+  // cada pixel fica só com o grupo de maior peso (somando os pesos): faixas vizinhas não se sobrepõem nem se desfazem
+  for (let i = 0; i < n; i++) {
+    let maior = null, soma = 0;
+    GRUPOS.forEach((g) => { const w = g.peso[i]; if (w) { soma += w; if (!maior || w > maior.peso[i]) maior = g; } });
+    if (maior) GRUPOS.forEach((g) => { if (g.peso[i]) g.peso[i] = g === maior ? Math.min(1, soma) : 0; });
+  }
+  GRUPOS.forEach((g) => { g.lista = g.lista.filter((i) => g.peso[i] > 0); });
+  // cor-chave de cada grupo: a média das suas cores na imagem original (é o valor que o jogador precisa reproduzir)
+  GRUPOS.forEach((g) => {
+    const m = g.ref;
+    g.alvoHsb = { h: Math.round((Math.atan2(m.y / m.w, m.x / m.w) * 180 / Math.PI + 360) % 360), s: Math.round(m.s / m.w * 100), b: Math.round(m.v / m.w * 100) };
+    g.atual = { ...g.inicio };
+  });
+}
+
+// ---------- recolore um grupo: desloca o matiz e escala saturação e brilho, mantendo a textura da imagem ----------
+function pintar(g) {
+  const a = g.atual, t = g.alvoHsb, dh = a.h - t.h, fs = t.s ? a.s / t.s : 1, fv = t.b ? a.b / t.b : 1, o = orig.data, d = saida.data;
+  for (const i of g.lista) {
+    const w = g.peso[i], p = i * 4;
+    const [r, gg, b] = hsbParaRgb(PH[i] + dh, Math.min(1, PS[i] * fs), Math.min(1, PV[i] * fv));
+    d[p] = o[p] + (r - o[p]) * w; d[p + 1] = o[p + 1] + (gg - o[p + 1]) * w; d[p + 2] = o[p + 2] + (b - o[p + 2]) * w;
+  }
+  ctx.putImageData(saida, 0, 0);
+}
+const atualizarChip = (i) => { const a = GRUPOS[i].atual; amostras.children[i].querySelector(".atual").style.background = css(hsbParaRgb(a.h, a.s / 100, a.b / 100)); };
+
+// ---------- controles ----------
+function sincronizarControles() {
+  const c = GRUPOS[selecionado].atual, rgb = (h, s, b) => css(hsbParaRgb(h, s / 100, b / 100));
+  H.value = c.h; S.value = c.s; B.value = c.b;
+  document.getElementById("vh").textContent = Math.round(c.h) + "°"; document.getElementById("vs").textContent = Math.round(c.s) + "%"; document.getElementById("vb").textContent = Math.round(c.b) + "%";
+  H.style.setProperty("--faixa", "linear-gradient(90deg," + [0, 60, 120, 180, 240, 300, 360].map((h) => rgb(h, 100, 100)).join(",") + ")");
+  S.style.setProperty("--faixa", "linear-gradient(90deg," + rgb(c.h, 0, c.b) + "," + rgb(c.h, 100, c.b) + ")");
+  B.style.setProperty("--faixa", "linear-gradient(90deg,#000," + rgb(c.h, c.s, 100) + ")");
+}
+function selecionar(i) {
+  selecionado = i; [...amostras.children].forEach((el, k) => el.classList.toggle("sel", k === i)); sincronizarControles();
+  const [x, y, w, h] = GRUPOS[i].trecho, m = document.getElementById("moldura");               // apoio visual: onde está, na imagem, o trecho da amostra
+  m.style.left = x * 100 + "%"; m.style.top = y * 100 + "%"; m.style.width = w * 100 + "%"; m.style.height = h * 100 + "%";
+}
+[[H, "h"], [S, "s"], [B, "b"]].forEach(([el, k]) => el.addEventListener("input", () => {
+  if (confirmada) return;
+  const g = GRUPOS[selecionado]; g.atual[k] = +el.value; pintar(g); atualizarChip(selecionado); sincronizarControles();
+}));
+
+// ---------- nota ----------
+function notaDe(g) {
+  const a = g.atual, t = g.alvoHsb;
+  const dh = distH(a.h, t.h) * Math.min(1, Math.max(a.s, t.s) / 40);
+  return Math.max(0, Math.round(100 - (dh * 1.2 + Math.abs(a.s - t.s) * 0.8 + Math.abs(a.b - t.b) * 0.8)));
+}
+// ---------- imagens para a comparação depois de confirmar (ver pergunta.js) ----------
+function imagensParaComparar() {
+  const c = document.createElement("canvas"); c.width = tela.width; c.height = tela.height; c.getContext("2d").putImageData(orig, 0, 0);
+  return { sua: tela.toDataURL(), original: c.toDataURL(), cores: GRUPOS.filter((g) => g.paleta !== false).map((g) => ({ cor: css(hsbParaRgb(g.alvoHsb.h, g.alvoHsb.s / 100, g.alvoHsb.b / 100)), nome: g.nome })) };
+}
+function confirmar() {
+  confirmada = true;
+  document.getElementById("moldura").classList.add("oculta");        // depois de confirmar, a moldura some
+  const notas = GRUPOS.map(notaDe);
+  notas.forEach((n, i) => { const r = amostras.children[i].querySelector(".rot"); r.className = "rot " + (n >= NOTA_ACERTO ? "ok" : n >= NOTA_PERTO ? "perto" : "erro"); r.textContent = n + " pts"; });
+  document.getElementById("nota").textContent = Math.round(notas.reduce((x, y) => x + y, 0) / notas.length) + " / 100";
+  const pior = Math.min(...notas);
+  retorno.textContent = pior >= NOTA_ACERTO ? "Muito bem! As cores da imagem combinam com as amostras." : pior >= NOTA_PERTO ? "Quase! Alguma cor ainda está um pouco diferente da amostra." : "";
+  acao.textContent = "Tentar de novo"; acao.classList.add("sec");
+  mostrarResultado({ nota: Math.round(notas.reduce((x, y) => x + y, 0) / notas.length), mensagem: retorno.textContent, ...imagensParaComparar(), harmonia: HARMONIA, proxima: PROXIMA, grupos: GRUPOS, reiniciar });
+}
+function reiniciar() {
+  confirmada = false;
+  fecharPergunta();
+  document.getElementById("moldura").classList.remove("oculta");
+  saida.data.set(orig.data);
+  GRUPOS.forEach((g, i) => { g.atual = { ...g.inicio }; pintar(g); atualizarChip(i); const r = amostras.children[i].querySelector(".rot"); r.textContent = ""; r.className = "rot"; });
+  document.getElementById("nota").textContent = ""; retorno.textContent = TEXTO_INICIAL;
+  acao.textContent = "Confirmar"; acao.classList.remove("sec"); selecionar(0);
+}
+acao.addEventListener("click", () => (confirmada ? reiniciar() : confirmar()));
+document.getElementById("passar").addEventListener("click", () => { location.href = PROXIMA; });   // passar: segue para a próxima imagem, sem nota
+
+// ---------- monta a tela ----------
+amostras.innerHTML = GRUPOS.map((g, i) => '<button class="amostra" data-i="' + i + '" aria-label="Amostra: ' + g.nome + '"><canvas></canvas><div class="atual"></div><div class="rot"></div></button>').join("");
+[...amostras.children].forEach((el, i) => el.addEventListener("click", () => selecionar(i)));
+tela.addEventListener("click", (e) => {                                  // clicar na imagem seleciona o grupo da cor clicada
+  if (confirmada) return;
+  const r = tela.getBoundingClientRect(), x = Math.floor((e.clientX - r.left) / r.width * tela.width), y = Math.floor((e.clientY - r.top) / r.height * tela.height), i = y * tela.width + x;
+  const gi = GRUPOS.findIndex((g) => g.peso[i] > 0.3);
+  if (gi >= 0) selecionar(gi);
+});
+img = new Image();
+img.onload = () => {
+  preparar();
+  GRUPOS.forEach((g, i) => {                                             // a amostra: um trecho da imagem ORIGINAL, na cor-chave
+    const c = amostras.children[i].querySelector("canvas"), [fx, fy, fw, fh] = g.trecho;
+    c.width = 240; c.height = 180;
+    c.getContext("2d").drawImage(img, fx * img.naturalWidth, fy * img.naturalHeight, fw * img.naturalWidth, fh * img.naturalHeight, 0, 0, 240, 180);
+  });
+  reiniciar();
+  encaixar();
+};
+img.src = window.IMAGEM_EMBUTIDA || FOTO;   // embutida = funciona sem servidor
+
+// ---------- encaixa a imagem no espaço disponível sem esticar (mantém a proporção original) ----------
+const cena = document.querySelector(".cena");
+function encaixar() {
+  if (!tela.width) return;
+  const r = cena.getBoundingClientRect(), k = Math.min(r.width / tela.width, (r.height - (window.LEGENDA_IMAGEM || 0)) / tela.height);   // desconta a legenda abaixo da imagem (pergunta.js)
+  tela.style.width = Math.floor(tela.width * k) + "px";
+  tela.style.height = Math.floor(tela.height * k) + "px";
+}
+new ResizeObserver(encaixar).observe(cena);
+</script>
+</body>
+</html>
