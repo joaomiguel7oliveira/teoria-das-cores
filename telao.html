@@ -118,7 +118,7 @@ function desenhar() {
     const linhas = Math.max(1, Math.ceil(resto.length / 2));   // metade em cada coluna
     const fonte = `clamp(.8rem, ${Math.min(3.2, 52 / linhas).toFixed(2)}vh, 1.6rem)`;
     const usadas = [...new Set(partidas.flatMap((p) => (p.fases || []).map((f) => f.fase)))].filter((f) => FASES_DO_JOGO[f]);
-    html = `<div class="tela final"><h1>Resultado · ${esc(r.nome)}</h1><p class="sub">${partidas.length} ${partidas.length === 1 ? "participante" : "participantes"}</p>
+    html = `<div class="tela final"><h1>Resultado</h1><p class="sub">${partidas.length} ${partidas.length === 1 ? "participante" : "participantes"}</p>
       <div class="podio">${[1, 0, 2].filter((i) => top[i]).map((i) => `<div class="degrau d${i + 1}"><div class="nome">${esc(top[i].nome)}</div><div class="pts">${pontos(top[i])} pts</div><div class="bloco">${i + 1}º</div></div>`).join("")}</div>
       ${resto.length ? `<ol class="lista" style="--linhas:${linhas};--fonte:${fonte}">${resto.map((p, k) => `<li><span class="pos">${k + 4}º</span><span class="nome">${esc(p.nome)}</span><span class="pts">${pontos(p)}</span></li>`).join("")}</ol>` : `<div style="flex:1"></div>`}
       ${usadas.length ? `<div class="gabarito"><span>Respostas certas</span><div class="itens">${usadas.map((f) => `<div class="gab"><img src="${FASES_DO_JOGO[f].img}" alt=""><div><b>${HARMONIAS_NOMES[FASES_DO_JOGO[f].harmonia] || ""}</b><small>${esc(FASES_DO_JOGO[f].nome)}</small></div></div>`).join("")}</div></div>` : ""}
