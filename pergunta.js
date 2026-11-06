@@ -225,10 +225,9 @@ function diagramaHarmonia(tipo) {
   .amostra { gap: 0 !important; opacity: .5; transition: opacity .2s; }   /* sem deslocamento (transform): em alguns PCs ele fazia a faixa de cor falhar no desenho */
   .amostra:hover { opacity: .85; }
   .amostra.sel { opacity: 1; }
-  .amostra canvas, .amostra .alvo { border-radius: 8px 8px 0 0 !important; outline: 0 !important; }
-  .amostra .atual { height: 10px !important; border-radius: 0 0 8px 8px !important; box-shadow: none !important; }
+  .amostra canvas, .amostra .alvo { border-radius: 8px !important; outline: 0 !important; }
+  .amostra .atual { display: none !important; }   /* sem a faixa da cor atual: o aluno se guia pela imagem */
   .amostra.sel canvas, .amostra.sel .alvo { box-shadow: 0 0 0 3px var(--ink); }
-  .amostra.sel .atual { box-shadow: 0 0 0 3px var(--ink) !important; }
   .amostra .rot { display: none; }
   .amostra .nome-amostra { margin-top: 6px; font-size: .72rem; font-weight: 700; text-align: center; text-transform: capitalize; color: var(--ink); }
   @media (max-width: 760px) {
