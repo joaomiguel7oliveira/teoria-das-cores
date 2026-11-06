@@ -96,6 +96,8 @@ const FASES = {
 };
 const app = document.getElementById("app");
 const MODO_TELAO = location.hash === "#telao";
+// prévia para revisão (inicio.html#previa=nome | #previa=comojogar): mostra a tela parada, sem começar o jogo nem avisar o banco
+const PREVIA_TELA = (location.hash.match(/previa=(\w+)/) || [])[1];
 
 function telaInicial() {
   const fotos = Object.values(FASES);
@@ -210,7 +212,7 @@ function telaComoJogar() {
     <button class="btn" id="comecar">Começar <span id="seg-comecar">${seg}</span></button>
   </div>`;
   let falta = seg;
-  const t = setInterval(() => { falta--; const el = document.getElementById("seg-comecar"); if (el) el.textContent = falta; if (falta <= 0) { clearInterval(t); comecarJogo(); } }, 1000);
+  const t = setInterval(() => { falta--; const el = document.getElementById("seg-comecar"); if (el) el.textContent = falta; if (falta <= 0) { clearInterval(t); if (PREVIA_TELA) return; comecarJogo(); } }, 1000);
   document.getElementById("comecar").addEventListener("click", () => { clearInterval(t); comecarJogo(); });
 }
 
@@ -245,18 +247,22 @@ function comecarJogo() {
 }
 
 telaInicial();
+if (PREVIA_TELA === "nome" || PREVIA_TELA === "comojogar") {
+  document.body.classList.add("tema-claro");
+  (PREVIA_TELA === "nome" ? telaNome : telaComoJogar)();
+}
 
 // Demonstração: só na guia aberta pelo botão "Abrir demonstração" do painel (inicio.html#demo).
 // Começa logo ao abrir; se alguém tocar e não jogar, volta a demonstrar depois de um tempo parado na tela inicial.
 const TEMPO_SEM_NINGUEM = 40;   // segundos
 try { sessionStorage.removeItem("jogando"); localStorage.removeItem("modo_simulacao"); } catch {}
-const pedidoDemo = !MODO_TELAO && (location.hash === "#demo" || new URLSearchParams(location.search).has("demo"));
+const pedidoDemo = !MODO_TELAO && !PREVIA_TELA && (location.hash === "#demo" || new URLSearchParams(location.search).has("demo"));
 if (pedidoDemo) history.replaceState(null, "", location.pathname);   // tira o #demo da barra
 if (pedidoDemo) try { sessionStorage.setItem("demo", "1"); } catch {}
 let simLigada = false;
-try { simLigada = !MODO_TELAO && sessionStorage.getItem("demo") === "1"; } catch {}
+try { simLigada = !MODO_TELAO && !PREVIA_TELA && window.top === window && sessionStorage.getItem("demo") === "1"; } catch {}
 // Estação: avisa o banco que este PC está livre (ou em demonstração), tenta reenviar partidas presas e repete a cada 2 min
-if (typeof Banco !== "undefined" && !MODO_TELAO) {
+if (typeof Banco !== "undefined" && !MODO_TELAO && !PREVIA_TELA) {
   const avisar = () => Banco.enviarFila().finally(() => Banco.informarEstacao(simLigada ? "demo" : "livre", ""));
   avisar(); setInterval(avisar, 120000);
 }

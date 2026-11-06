@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Revisão · Todas as telas</title>
+<!-- Página de revisão (não faz parte do jogo): as telas de verdade em modo prévia, com dados de exemplo; nada é gravado no banco -->
+<style>
+  :root { --ink: #16181d; --muted: #7a7a72; --senai: #b5179e; --sans: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e9e6df; color: var(--ink); font-family: var(--sans); }
+  header { max-width: 1500px; margin: 0 auto; padding: 28px 40px 0; }
+  h1 { margin: 0 0 6px; font-size: 1.5rem; letter-spacing: -.02em; } header p { margin: 0; color: var(--muted); }
+  h2 { max-width: 1500px; margin: 30px auto 0; padding: 0 40px; font-size: .8rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  .grade { max-width: 1500px; margin: 0 auto; padding: 12px 40px 6px; display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 26px; }
+  .op h3 { margin: 0 0 4px; font-size: 1rem; } .op h3 b { color: var(--senai); margin-right: 6px; }
+  .op p { margin: 0 0 10px; font-size: .84rem; color: #55534d; line-height: 1.4; min-height: 2.6em; }
+  .quadro { width: 100%; aspect-ratio: 16 / 9; position: relative; overflow: hidden; border-radius: 10px; background: #f6f4ef; box-shadow: 0 10px 30px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.06); }
+  .quadro iframe { position: absolute; top: 0; left: 0; width: 1600px; height: 900px; border: 0; transform-origin: 0 0; pointer-events: none; }
+  .op a { display: inline-block; margin-top: 8px; font-size: .8rem; color: var(--ink); }
+  footer { max-width: 1500px; margin: 0 auto; padding: 20px 40px 50px; font-size: .8rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Todas as telas · revisão</h1>
+  <p>São as telas de verdade, com dados de exemplo. Nada é gravado no banco. Diga o número da tela e o que quer mudar. Use "Abrir em tela cheia" para ver no tamanho real.</p>
+</header>
+
+<h2>Jogador</h2>
+<div class="grade" id="jogador"></div>
+<h2>Telão</h2>
+<div class="grade" id="telao"></div>
+<h2>Moderador</h2>
+<div class="grade" id="moderador"></div>
+<footer>As fases de exemplo usam a imagem da neve; todas as fases têm o mesmo layout. Na tela de ajuste e no resultado, as cores foram ajustadas sozinhas, perto do certo.</footer>
+
+<script>
+const TELAS = {
+  jogador: [
+    ["Abertura", "Tela inicial do jogo, com o círculo animado e a galeria das imagens. Toque para começar.", "inicio.html"],
+    ["Nome do jogador", "O jogador digita o nome. Nomes impróprios ou repetidos na rodada são recusados.", "inicio.html#previa=nome"],
+    ["Como jogar", "Três passos e a contagem para começar (aqui parada).", "inicio.html#previa=comojogar"],
+    ["Percepção de cor (ajuste)", "Ajustar matiz, saturação e luminosidade de cada cor até igualar às amostras.", "prototipo-neve.html"],
+    ["Resultado da cor", "A sua versão ao lado da original, a pontuação e a aproximação de cada cor.", "prototipo-neve.html#previa=resultado"],
+    ["Harmonias", "Escolher a combinação de cores da imagem. Aparece depois do resultado (aguarde uns segundos no quadro).", "prototipo-casa.html#previa=pergunta"],
+    ["Tela final", "Pontuação, nível, posição, as fases e o ranking ao vivo. Botão \"Próximo jogador\" no canto.", "final.html#previa"],
+  ],
+  telao: [
+    ["Sem rodada", "Entre uma turma e outra: a abertura do jogo com \"Aguardando a próxima rodada\" e o recorde.", "telao.html#previa=espera"],
+    ["Ao vivo · com pontos", "Durante a rodada (interruptor ligado no painel). Quem ainda joga aparece no fim.", "telao.html#previa=b"],
+    ["Ao vivo · só nomes", "Durante a rodada (interruptor desligado): só nomes, pontos só ao encerrar.", "telao.html#previa=c"],
+    ["Rodada encerrada", "Pódio, todos em 2 colunas e as respostas certas das imagens jogadas.", "telao.html#previa=fim"],
+  ],
+  moderador: [
+    ["Painel do moderador", "Rodada, regras, fases no jogo, estações, jogadores, desempenho e histórico. Precisa de login.", "painel.html"],
+  ],
+};
+let n = 0;
+for (const [grupo, lista] of Object.entries(TELAS)) {
+  document.getElementById(grupo).innerHTML = lista.map(([titulo, texto, url]) => `<div class="op"><h3><b>${++n}</b>${titulo}</h3><p>${texto}</p>
+    <div class="quadro"><iframe src="${url}" title="${titulo}" loading="lazy"></iframe></div><a href="${url}" target="_blank">Abrir em tela cheia</a></div>`).join("");
+}
+const encaixar = () => document.querySelectorAll(".quadro").forEach((q) => { q.firstElementChild.style.transform = `scale(${q.clientWidth / 1600})`; });
+addEventListener("resize", encaixar); encaixar();
+</script>
+</body>
+</html>

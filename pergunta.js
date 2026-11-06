@@ -309,6 +309,22 @@ const LAYOUT_PERGUNTA = "lado";
 // Regras definidas pelo moderador no painel (banco.js guarda uma cópia no navegador: vale mesmo sem internet)
 // cópia offline do site (sw.js): só quando publicado (http/https)
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
+// Prévia para revisão (prototipo-*.html#previa=resultado | #previa=pergunta): ajusta as cores perto do certo e confirma sozinho;
+// "resultado" para na tela de pontuação, "pergunta" segue até a harmonia. Ninguém está jogando, então nada é gravado.
+const PREVIA_FASE = (location.hash.match(/previa=(\w+)/) || [])[1];
+if (PREVIA_FASE === "resultado" || PREVIA_FASE === "pergunta") document.addEventListener("DOMContentLoaded", () => {
+  const pronto = () => typeof GRUPOS !== "undefined" && GRUPOS.every((g) => g.alvoHsb);
+  const ajustar = () => {
+    if (!pronto()) return setTimeout(ajustar, 200);
+    GRUPOS.forEach((g, i) => {
+      selecionar(i);
+      const t = g.alvoHsb, quase = { h: t.h + 6, s: Math.max(0, t.s - 5), b: Math.min(100, t.b + 4) };
+      for (const c of ["h", "s", "b"]) { const el = document.getElementById(c); el.value = Math.round(quase[c]); el.dispatchEvent(new Event("input", { bubbles: true })); }
+    });
+    setTimeout(() => { if (!confirmada) confirmar(); }, 400);
+  };
+  setTimeout(ajustar, 500);
+});
 // sons (painel: "Sons"); carrega sons.js sem precisar mexer em cada prototipo-*.html. A demonstração fica muda.
 document.head.append(Object.assign(document.createElement("script"), { src: "sons.js" }));
 function som(nome) { if (typeof sim !== "undefined" && sim.ativo) return; window.Sons?.tocar(nome); }
@@ -493,6 +509,7 @@ if (FUNDO_BRANCO.includes(paginaAtual())) document.documentElement.classList.add
 
 // contagem regressiva no lugar de um botão: anel que esvazia e os segundos no meio; ao fim, chama aoTerminar
 function contagemRegressiva(lugar, segundos, aoTerminar) {
+  if (PREVIA_FASE === "resultado") aoTerminar = () => {};      // prévia do resultado: a tela fica parada
   lugar.innerHTML = `<span class="contagem" role="timer" aria-live="off"><span class="anel"></span><b>${segundos}</b></span>`;
   const anel = lugar.querySelector(".anel"), num = lugar.querySelector("b"), t0 = performance.now(), total = segundos * 1000;
   const passo = (t) => {
@@ -752,7 +769,7 @@ function ligarQuestao(q, dados, certa) {
 // Um toque/clique de verdade leva à tela inicial (inicio.html) para a pessoa jogar.
 // Só acontece na guia aberta pelo botão "Abrir demonstração" do painel (inicio.html#demo grava sessionStorage "demo" = "1",
 // que vale só para aquela guia). Os PCs dos jogadores nunca entram em demonstração.
-function simulacaoLigada() { try { return sessionStorage.getItem("demo") === "1"; } catch { return false; } }
+function simulacaoLigada() { if (window.top !== window) return false; try { return sessionStorage.getItem("demo") === "1"; } catch { return false; } }   // dentro de uma prévia (iframe), nunca
 function alguemJogando() { try { return sessionStorage.getItem("jogando") === "1"; } catch { return false; } }
 const sim = { ativo: false, cursor: null, habilidade: 0.5 };
 const sorte = (a, b) => a + Math.random() * (b - a);
