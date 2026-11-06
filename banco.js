@@ -283,6 +283,16 @@ function pontos(p) {
 const CONFIG_ATUAL = () => Banco.configLocal();
 
 // Título divertido conforme o aproveitamento (0 a 1)
+const TITULOS = [            // [aproveitamento mínimo (0 a 1), título] — do maior para o menor
+  [0.97, "Mestre das Cores"],
+  [0.90, "Especialista em Cor"],
+  [0.82, "Olho Clínico"],
+  [0.74, "Diretor de Arte"],
+  [0.65, "Artista"],
+  [0.55, "Caçador de Cores"],
+  [0.40, "Aprendiz"],
+  [0, "Curioso"],
+];
 function tituloDoJogador(frac) {
-  return frac >= 0.85 ? "Diretor de Arte" : frac >= 0.7 ? "Designer de Cor" : frac >= 0.5 ? "Aprendiz de Cor" : "Olho Curioso";
+  return (TITULOS.find(([min]) => frac >= min) || TITULOS[TITULOS.length - 1])[1];
 }
