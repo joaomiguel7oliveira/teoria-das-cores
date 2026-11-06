@@ -179,7 +179,8 @@ function telaNome() {
     if (repetido) return recusar("Esse nome já está nesta rodada. Use o sobrenome ou uma inicial.");
     try { sessionStorage.setItem("jogador", nome); sessionStorage.setItem("jogando", "1"); } catch {}   // "jogando": desliga a demonstração
     // a partida pertence à rodada em que a pessoa COMEÇOU (se o moderador abrir outra no meio, ela não muda de rodada)
-    try { const r = typeof Banco !== "undefined" ? Banco.rodadaAberta(Banco.configLocal()) : null;   // sem rodada aberta: null (a partida cai na rodada que estiver aberta ao terminar) sessionStorage.setItem("rodada_jogo", JSON.stringify(r?.id ? { id: r.id, nome: r.nome } : null)); } catch {}
+    // sem rodada aberta: null (a partida cai na rodada que estiver aberta ao terminar)
+    try { const r = typeof Banco !== "undefined" ? Banco.rodadaAberta(Banco.configLocal()) : null; sessionStorage.setItem("rodada_jogo", JSON.stringify(r?.id ? { id: r.id, nome: r.nome } : null)); } catch {}
     if (typeof Banco !== "undefined") Banco.informarEstacao("jogando", nome);
     telaComoJogar();
   };
