@@ -11,6 +11,8 @@
 
 // harmonia = resposta certa (a mesma de HARMONIA em cada prototipo-*.html); o telão só mostra quando a rodada termina
 const HARMONIAS_NOMES = { complementar: "Complementar", analoga: "Análoga", triade: "Tríade", monocromatica: "Monocromática", tetradica: "Tetrádica" };
+// cópia offline do site (sw.js): só quando publicado (http/https)
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 const FASES_DO_JOGO = {
   "prototipo-neve": { nome: "Neve", img: "img/paisagem-neve.webp", harmonia: "complementar" },
   "prototipo-casa": { nome: "Casa", img: "img/casa-vermelha.webp", harmonia: "triade" },
@@ -178,12 +180,15 @@ const Banco = (() => {
     try {
       await db.runTransaction(async (t) => {
         const atual = await t.get(ref);
-        if (!atual.exists || (atual.data().total ?? -1) < p.total) t.set(ref, { nome: p.nome, total: p.total, maximo: p.maximo, rodadaNome: p.rodadaNome || "", quando: Date.now() });
+        if (!atual.exists || aprov(atual.data()) < aprov(p)) t.set(ref, { nome: p.nome, total: p.total, maximo: p.maximo, rodadaNome: p.rodadaNome || "", quando: Date.now() });
       });
     } catch (e) { console.warn("recorde:", e); }
   }
   // Partidas de uma rodada, em ordem de pontos (ordena aqui para não precisar de índice no banco)
-  function ordenar(lista) { return lista.sort((a, b) => b.total - a.total || (a.criadoEm?.toMillis?.() ?? 0) - (b.criadoEm?.toMillis?.() ?? 0)); }
+  // Ordem do ranking: pelo aproveitamento (total ÷ maximo), para ser justo mesmo se o número de fases mudar no meio;
+  // empate: mais pontos reais e, depois, quem terminou antes
+  const aprov = (p) => (p.maximo ? p.total / p.maximo : 0);
+  function ordenar(lista) { return lista.sort((a, b) => aprov(b) - aprov(a) || b.total - a.total || (a.criadoEm?.toMillis?.() ?? 0) - (b.criadoEm?.toMillis?.() ?? 0)); }
   // sem rodada criada pelo moderador, as partidas ficam em "sem-rodada"
   async function partidasDaRodada(rodadaId) {
     rodadaId = rodadaId || "sem-rodada";
@@ -229,6 +234,9 @@ const Banco = (() => {
     if (p && r && r.nome === p.nome && r.total === p.total) await recalcularRecorde();
   }
 
+  // rodada em que o jogador atual começou (guardada em inicio.html ao confirmar o nome)
+  function rodadaDoJogo() { try { return JSON.parse(sessionStorage.getItem("rodada_jogo")); } catch { return null; } }
+
   // ---------- estações (cada PC do jogo informa o que está fazendo; o painel e o telão acompanham) ----------
   function idDaEstacao() {
     let id = null; try { id = localStorage.getItem("estacao"); } catch {}
@@ -237,8 +245,8 @@ const Banco = (() => {
   }
   async function informarEstacao(status, jogador) {
     if (!db) return;
-    const cfg = configLocal();
-    const dados = { status, jogador: (jogador || "").slice(0, 20), rodada: cfg.rodada?.id || "sem-rodada", fila: lerLocal("fila_partidas", []).length, atualizado: firebase.firestore.FieldValue.serverTimestamp() };
+    const rodada = (status !== "livre" && status !== "demo" && rodadaDoJogo()) || configLocal().rodada;
+    const dados = { status, jogador: (jogador || "").slice(0, 20), rodada: rodada?.id || "sem-rodada", fila: lerLocal("fila_partidas", []).length, atualizado: firebase.firestore.FieldValue.serverTimestamp() };
     if (status === "jogando") dados.inicio = Date.now();
     try { await db.collection("estacoes").doc(idDaEstacao()).set(dados, { merge: true }); } catch (e) { console.warn("estação:", e); }
   }
@@ -271,7 +279,7 @@ const Banco = (() => {
   const sair = () => auth.signOut();
   const aoMudarLogin = (fn) => (auth ? auth.onAuthStateChanged(fn) : fn(null));
 
-  return { disponivel: !!db, configLocal, atualizarConfig, ouvirConfig, salvarConfig, encerrarRodada, novaRodada, historico, idDaEstacao, informarEstacao, ouvirEstacoes, apagarEstacao, nomeEmUso, resumir, apagarPartida, salvarPartida, enviarFila, partidasDaRodada, ouvirRodada, ouvirRecorde, apagarRecorde, entrar, sair, aoMudarLogin };
+  return { disponivel: !!db, configLocal, atualizarConfig, ouvirConfig, salvarConfig, encerrarRodada, novaRodada, historico, idDaEstacao, informarEstacao, rodadaDoJogo, ouvirEstacoes, apagarEstacao, nomeEmUso, resumir, apagarPartida, salvarPartida, enviarFila, partidasDaRodada, ouvirRodada, ouvirRecorde, apagarRecorde, entrar, sair, aoMudarLogin };
 })();
 
 // Pontos para MOSTRAR: o banco guarda sempre os pontos reais (total e maximo); com "Nota de 0 a 100" ligada no painel,
@@ -286,9 +294,9 @@ const CONFIG_ATUAL = () => Banco.configLocal();
 const TITULOS = [            // [aproveitamento mínimo (0 a 1), título] — do maior para o menor
   [0.97, "Mestre das Cores"],
   [0.90, "Especialista em Cor"],
-  [0.82, "Olho Clínico"],
-  [0.74, "Diretor de Arte"],
-  [0.65, "Artista"],
+  [0.82, "Artista"],
+  [0.74, "Olho Clínico"],
+  [0.65, "Designer"],
   [0.55, "Caçador de Cores"],
   [0.40, "Aprendiz"],
   [0, "Curioso"],

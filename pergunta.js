@@ -307,6 +307,8 @@ function guacheSVG(cor, n) {
 const LAYOUT_PERGUNTA = "lado";
 // Tempo (segundos) que cada tela fica antes de passar sozinha: o resultado do HSB e a combinação depois de respondida
 // Regras definidas pelo moderador no painel (banco.js guarda uma cópia no navegador: vale mesmo sem internet)
+// cópia offline do site (sw.js): só quando publicado (http/https)
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 // sons (painel: "Sons"); carrega sons.js sem precisar mexer em cada prototipo-*.html. A demonstração fica muda.
 document.head.append(Object.assign(document.createElement("script"), { src: "sons.js" }));
 function som(nome) { if (typeof sim !== "undefined" && sim.ativo) return; window.Sons?.tocar(nome); }

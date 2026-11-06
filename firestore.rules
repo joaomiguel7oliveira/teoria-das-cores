@@ -22,11 +22,12 @@ service cloud.firestore {
         && request.resource.data.maximo <= 1200;
       allow update, delete: if request.auth != null;
     }
-    // recorde do evento: só pode subir; o moderador pode corrigir
+    // recorde do evento: só pode subir (pelo aproveitamento total/maximo, comparado em multiplicação cruzada); o moderador pode corrigir
     match /recorde/{doc} {
       allow read: if true;
-      allow create: if request.resource.data.total is int;
-      allow update: if request.auth != null || (request.resource.data.total is int && request.resource.data.total > resource.data.total);
+      allow create: if request.resource.data.total is int && request.resource.data.maximo is int && request.resource.data.maximo > 0;
+      allow update: if request.auth != null || (request.resource.data.total is int && request.resource.data.maximo is int && request.resource.data.maximo > 0
+        && request.resource.data.total * resource.data.maximo > resource.data.total * request.resource.data.maximo);
       allow delete: if request.auth != null;
     }
     // estações (cada PC do jogo): todos leem; o PC grava o próprio status (formato válido); só o moderador apaga
