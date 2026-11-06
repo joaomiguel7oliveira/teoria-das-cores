@@ -12,7 +12,7 @@ const HARMONIAS_PERGUNTA = {
   analoga: { rotulo: "Análoga", dica: "Cores vizinhas no círculo cromático combinam de forma suave e calma." },
   triade: { rotulo: "Tríade", dica: "Três cores igualmente espaçadas no círculo dão variedade com equilíbrio." },
   monocromatica: { rotulo: "Monocromática", dica: "Uma só cor com tons claros e escuros dá unidade e elegância." },
-  tetradica: { rotulo: "Tetrádica", dica: "Quatro cores, em dois pares de opostas, dão uma paleta rica e variada." },
+  // (Tetrádica fora da lista: nenhuma fase tem essa resposta e ela se confundia com a Quadrada)
   quadrada: { rotulo: "Quadrada", dica: "Quatro cores igualmente espaçadas no círculo, formando um quadrado." },
 };
 
