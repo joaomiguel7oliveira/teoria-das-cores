@@ -74,7 +74,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 const msDe = (t) => t?.toMillis?.() ?? (typeof t === "number" ? t : 0);
 let carregadas = false, cfg = null, partidas = [], estacoes = [], recorde = null, pararRodada = () => {}, rodadaOuvida;
 const palco = document.getElementById("palco");
-let ultimaTela = "";
+let ultimaTela = "", ultimoEstado = "";
 
 function rodapeRecorde() {
   return recorde ? `<div class="rodape">Recorde do evento <b>${pontos(recorde)}</b> <em>${esc(recorde.nome)}</em></div>` : "";
@@ -83,9 +83,12 @@ function rodapeRecorde() {
 const PREVIA = (location.hash.match(/previa=(\w+)/) || [])[1];
 const estiloAndamento = () => (["b", "c"].includes(PREVIA) ? PREVIA : cfg?.telaAoVivo === "c" ? "c" : "b");
 // estações desta rodada com sinal nos últimos 5 min que estão no meio de uma partida
+// (as fases não falam com o banco, então o PC fica sem sinal enquanto a pessoa joga: prazo de 20 min)
+const PRAZO_JOGANDO = 20 * 60000;
+const normNome = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
 function jogandoAgora(r) {
-  const agora = Date.now();
-  return estacoes.filter((e) => e.status === "jogando" && e.rodada === r.id && agora - msDe(e.atualizado) < 5 * 60000);
+  const agora = Date.now(), terminaram = new Set(partidas.map((p) => normNome(p.nome)));   // já tem partida: não mostra como "jogando"
+  return estacoes.filter((e) => e.status === "jogando" && e.rodada === r.id && agora - msDe(e.atualizado) < PRAZO_JOGANDO && !terminaram.has(normNome(e.jogador)));
 }
 function desenhar() {
   const r = cfg?.rodada;
@@ -123,8 +126,11 @@ function desenhar() {
   }
   document.body.classList.toggle("sem-rodada", esperando);
   if (html === ultimaTela) return;   // não refaz a tela (e a animação) sem mudança
+  const estado = esperando ? "espera" : r.encerrada ? "fim" : "vivo";
   ultimaTela = html;
   palco.innerHTML = html;
+  if (estado === ultimoEstado) palco.firstElementChild?.style.setProperty("animation", "none");
+  ultimoEstado = estado;
 }
 
 // Prévia com dados de exemplo (telao.html#previa=b|c|fim|espera), usada em opcoes-telao.html; não lê nem grava no banco

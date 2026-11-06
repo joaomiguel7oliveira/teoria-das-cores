@@ -268,7 +268,7 @@ const Banco = (() => {
       ]);
       if (ps.docs.some((d) => norm(d.data().nome) === alvo)) return true;
       const eu = idDaEstacao(), agora = Date.now();
-      return es.docs.some((d) => d.id !== eu && d.data().status === "jogando" && agora - (d.data().atualizado?.toMillis?.() ?? 0) < 5 * 60000 && norm(d.data().jogador) === alvo);
+      return es.docs.some((d) => d.id !== eu && d.data().status === "jogando" && agora - (d.data().atualizado?.toMillis?.() ?? 0) < 20 * 60000 && norm(d.data().jogador) === alvo);
     })();
     return Promise.race([busca, new Promise((ok) => setTimeout(() => ok(false), 3000))]).catch(() => false);
   }

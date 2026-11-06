@@ -131,7 +131,8 @@ document.addEventListener("DOMContentLoaded", () => aplicarTema(temaSalvo()));
 
   <section class="card largo">
     <h2>Estações (PCs do jogo)</h2>
-    <p class="dica">Cada PC aparece aqui ao abrir o jogo. <b>Fila</b> = partidas que não foram enviadas por falta de internet (o PC reenvia sozinho a cada 2 min). Sem sinal há mais de 5 min = desligado ou sem internet.</p>
+    <p class="dica">Cada PC aparece aqui ao abrir o jogo. <b>Fila</b> = partidas que não foram enviadas por falta de internet (o PC reenvia sozinho a cada 2 min). Sem sinal há mais de 5 min (20 min se estiver jogando, porque as fases não mandam sinal) = desligado ou sem internet.</p>
+    <div class="acoes"><button class="btn sec" id="limpar-estacoes">Tirar da lista os PCs sem sinal</button></div>
     <div id="alerta-fila" class="alerta" hidden></div>
     <table><thead><tr><th>Estação</th><th>Status</th><th>Jogador</th><th>Fila</th><th>Último sinal</th><th></th></tr></thead><tbody id="estacoes"></tbody></table>
   </section>
@@ -274,7 +275,7 @@ function desenharEstacoes() {
   const agora = Date.now(), ROT = { livre: "Livre", jogando: "Jogando", concluiu: "Concluiu", demo: "Demonstração" };
   const lista = [...estacoes].sort((a, b) => a.id.localeCompare(b.id));
   $("estacoes").innerHTML = lista.map((e, i) => {
-    const idade = agora - msDe(e.atualizado), off = idade > 5 * 60000;
+    const idade = agora - msDe(e.atualizado), off = idade > (e.status === "jogando" ? 20 : 5) * 60000;   // durante as fases o PC não manda sinal
     const st = off ? "off" : e.status, rot = off ? "Sem sinal" : (ROT[e.status] || e.status);
     const min = Math.round(idade / 60000);
     return `<tr><td><b>${esc(e.id)}</b></td><td><span class="st ${st}">${rot}</span></td><td>${esc(e.jogador || "—")}</td>`
@@ -286,6 +287,13 @@ function desenharEstacoes() {
   $("alerta-fila").hidden = !presas.length;
   $("alerta-fila").textContent = presas.length ? `Atenção: ${presas.map((e) => `${e.id} (${e.fila})`).join(", ")} com partidas não enviadas. Confira a internet desse PC.` : "";
 }
+$("limpar-estacoes").addEventListener("click", async () => {
+  const agora = Date.now();
+  const velhas = estacoes.filter((e) => agora - msDe(e.atualizado) > (e.status === "jogando" ? 20 : 5) * 60000);
+  if (!velhas.length) return alert("Nenhum PC sem sinal.");
+  if (!confirm(`Tirar ${velhas.length} PC(s) sem sinal da lista? Eles voltam a aparecer quando abrirem o jogo de novo.`)) return;
+  for (const e of velhas) await Banco.apagarEstacao(e.id).catch(() => {});
+});
 $("estacoes").addEventListener("click", async (e) => {
   const b = e.target.closest(".x"); if (!b) return;
   const id = JSON.parse($("estacoes").dataset.ids)[+b.dataset.e];
