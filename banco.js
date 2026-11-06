@@ -10,7 +10,7 @@
 //   estacoes/{id}    cada PC do jogo: status (livre | jogando | concluiu | demo), jogador, rodada, fila (partidas não enviadas), atualizado
 
 // harmonia = resposta certa (a mesma de HARMONIA em cada prototipo-*.html); o telão só mostra quando a rodada termina
-const HARMONIAS_NOMES = { complementar: "Complementar", analoga: "Análoga", triade: "Tríade", monocromatica: "Monocromática", tetradica: "Tetrádica" };
+const HARMONIAS_NOMES = { complementar: "Complementar", analoga: "Análoga", triade: "Tríade", monocromatica: "Monocromática", tetradica: "Tetrádica", quadrada: "Quadrada" };
 // cópia offline do site (sw.js): só quando publicado (http/https)
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 const FASES_DO_JOGO = {
@@ -26,6 +26,22 @@ const FASES_DO_JOGO = {
   "prototipo-victorias-secret": { nome: "Victoria's Secret", img: "img/victorias-secret.jpg", harmonia: "monocromatica" },
   "prototipo-menina-afega": { nome: "Menina afegã", img: "img/menina-afega.jpg", harmonia: "complementar" },
   "prototipo-lego": { nome: "LEGO", img: "img/lego.jpg", harmonia: "analoga" },
+  "prototipo-bob-esponja": { nome: "Bob Esponja", img: "img/bob-esponja.jpg", harmonia: "quadrada" },
+  "prototipo-blade-runner": { nome: "Blade Runner", img: "img/blade-runner.jpg", harmonia: "complementar" },
+  "prototipo-kung-fu-panda": { nome: "Kung Fu Panda", img: "img/kung-fu-panda.jpg", harmonia: "analoga" },
+  "prototipo-picole": { nome: "Picolé", img: "img/picole.jpg", harmonia: "analoga" },
+  "prototipo-gumball": { nome: "Gumball e Darwin", img: "img/gumball.jpg", harmonia: "complementar" },
+  "prototipo-mario": { nome: "Mario Bros", img: "img/mario.jpg", harmonia: "triade" },
+  "prototipo-ikea": { nome: "IKEA", img: "img/ikea.jpg", harmonia: "complementar" },
+  "prototipo-a-sobremesa": { nome: "A Sobremesa (Matisse)", img: "img/a-sobremesa.jpg", harmonia: "triade" },
+  "prototipo-batman": { nome: "The Batman", img: "img/batman.jpg", harmonia: "monocromatica" },
+  "prototipo-logan": { nome: "Logan", img: "img/logan.jpg", harmonia: "analoga" },
+  "prototipo-concerto": { nome: "Pôster de concerto", img: "img/concerto.jpg", harmonia: "analoga" },
+  "prototipo-natura-ekos": { nome: "Natura Ekos", img: "img/natura-ekos.jpg", harmonia: "analoga" },
+  "prototipo-noite-estrelada": { nome: "Noite Estrelada", img: "img/noite-estrelada.jpg", harmonia: "complementar" },
+  "prototipo-coca-cola": { nome: "Coca-Cola", img: "img/coca-cola.png", harmonia: "monocromatica" },
+  "prototipo-mondrian": { nome: "Mondrian", img: "img/mondrian.jpg", harmonia: "triade" },
+  "prototipo-abaporu": { nome: "Abaporu", img: "img/abaporu.jpg", harmonia: "analoga" },
 };
 
 // Regras padrão (valem enquanto o moderador não mudar nada, ou sem internet)

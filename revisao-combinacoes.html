@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Revisão das combinações · Teoria das Cores</title>
+<style>
+  :root { --ink: #16181d; --muted: #7a7a72; --line: #dcd8cf; --bg: #f3f1ec; --sans: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); padding: 28px 20px 60px; }
+  h1 { margin: 0 0 4px; font-size: 1.6rem; letter-spacing: -.02em; }
+  p.nota { margin: 0 0 22px; color: #55554f; }
+  .grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; }
+  .fase { background: #fff; border-radius: 12px; box-shadow: 0 0 0 1px var(--line); overflow: hidden; display: flex; flex-direction: column; }
+  .fase img { width: 100%; aspect-ratio: 1; object-fit: contain; background: #faf9f6; }
+  .info { padding: 10px 12px 12px; display: flex; align-items: center; gap: 10px; }
+  .info svg { width: 40px; height: 40px; flex: none; }
+  .info b { display: block; font-size: .95rem; } .info span { font-size: .85rem; color: var(--muted); }
+  .r { fill: none; stroke: #c8c4ba; stroke-width: 3; } .l { fill: none; stroke: var(--ink); stroke-width: 2.6; } .p { fill: var(--ink); }
+  .n { font-size: .7rem; color: var(--muted); margin-right: 4px; }
+  .cores { display: flex; align-items: center; gap: 10px; padding: 0 12px 12px; }
+  .cores .roda { width: 76px; height: 76px; flex: none; }
+  .cores span { font-size: .72rem; color: var(--muted); line-height: 1.35; text-transform: capitalize; }
+</style>
+</head>
+<body>
+<h1>Revisão das combinações</h1>
+<p class="nota">Todas as fases do jogo com a resposta certa cadastrada. Me diga o número da que estiver errada.</p>
+<div class="grade" id="grade"></div>
+<script src="banco.js"></script>
+<script>
+const ANG = { analoga: [-30, 0, 30], complementar: [0, 180], triade: [0, 120, 240], tetradica: [-60, 60, 120, 240], quadrada: [0, 90, 180, 270] };
+function diagrama(t) {
+  const c = 50, r = 38, pt = (a) => [c + r * Math.sin(a * Math.PI / 180), c - r * Math.cos(a * Math.PI / 180)];
+  if (t === "monocromatica") { const [x, y] = pt(0); return `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" class="r"/><line x1="50" y1="50" x2="${x}" y2="${y}" class="l"/><circle cx="50" cy="${50 - r * .35}" r="4" class="p"/><circle cx="50" cy="${50 - r * .68}" r="5" class="p"/><circle cx="${x}" cy="${y}" r="6" class="p"/></svg>`; }
+  const pts = ANG[t].map(pt), lista = pts.map((p) => p.join(",")).join(" ");
+  const forma = pts.length === 2 || t === "analoga" ? `<polyline points="${lista}" class="l"/>` : `<polygon points="${lista}" class="l"/>`;
+  return `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" class="r"/>${forma}${pts.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="6" class="p"/>`).join("")}</svg>`;
+}
+// ---------- círculo RYB (o mesmo do jogo) com as cores de cada fase marcadas ----------
+const RODA_12 = ["#fe2712", "#fc600a", "#fb9902", "#fccc1a", "#fefe33", "#b2d732", "#66b032", "#347c98", "#0247fe", "#4424d6", "#8601af", "#c21460"];
+const hexHue = (hex) => { const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255), mx = Math.max(r, g, b), d = mx - Math.min(r, g, b); if (!d) return 0; const h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return ((h * 60) + 360) % 360; };
+const MATIZES = RODA_12.map(hexHue);
+function anguloNaRoda(h) {               // matiz da tela (HSB) -> posição no círculo RYB (graus, 0 = topo)
+  const base = MATIZES[0], hh = h < base ? h + 360 : h; let i = 11;
+  for (let k = 0; k < 12; k++) if (MATIZES[k] <= hh) i = k;
+  const ini = MATIZES[i] < base ? MATIZES[i] + 360 : MATIZES[i], prox = (i + 1) % 12, fim = prox === 0 ? base + 360 : MATIZES[prox];
+  return (i + (hh - ini) / (fim - ini)) * 30;
+}
+function rodaComCores(cores) {
+  const c = 50, r1 = 46, r2 = 34, passo = Math.PI / 6, pt = (r, a) => `${(c + r * Math.sin(a)).toFixed(2)} ${(c - r * Math.cos(a)).toFixed(2)}`;
+  const fatias = RODA_12.map((cor, i) => { const a0 = i * passo - passo / 2, a1 = a0 + passo; return `<path d="M${pt(r1, a0)} A${r1} ${r1} 0 0 1 ${pt(r1, a1)} L${pt(r2, a1)} A${r2} ${r2} 0 0 0 ${pt(r2, a0)} Z" fill="${cor}" stroke="#fff" stroke-width=".8"/>`; }).join("");
+  const angs = cores.map((g) => anguloNaRoda(g.h) * Math.PI / 180);
+  const linhas = angs.length > 1 ? `<polygon points="${angs.map((a) => pt(28, a).replace(" ", ",")).join(" ")}" fill="none" stroke="#16181d" stroke-width="1.6" stroke-linejoin="round"/>` : "";
+  const pontos = cores.map((g, k) => { const [x, y] = pt(28, angs[k]).split(" "); return `<circle cx="${x}" cy="${y}" r="5.5" fill="hsl(${g.h} 80% 50%)" stroke="#16181d" stroke-width="1.6"><title>${g.nome}</title></circle>`; }).join("");
+  return `<svg viewBox="0 0 100 100" class="roda">${fatias}${linhas}${pontos}</svg>`;
+}
+// lê as faixas de matiz (GRUPOS) de cada fase; o ponto fica no meio da faixa. Grupos fora da paleta da pergunta não entram.
+async function coresDaFase(id) {
+  try {
+    const txt = await (await fetch(id + ".html")).text();
+    // cacto (desenho): os grupos têm a cor em hexadecimal, não faixa de matiz
+    const hexes = [...txt.matchAll(/\{ nome: "[^"]+", cor: "([^"]+)", membros: \[\{ c: "[^"]+", hex: "(#[0-9a-f]{6})"/gi)];
+    if (hexes.length) return hexes.map((m) => ({ nome: m[1], h: hexHue(m[2]) }));
+    return [...txt.matchAll(/\{ nome: "([^"]+)",([^\n]*?)matiz: \[(\d+), (\d+)\]/g)].filter((m) => !/paleta: false/.test(m[2])).map((m) => {
+      let a = +m[3], b = +m[4]; if (b < a) b += 360; return { nome: m[1], h: ((a + b) / 2) % 360 };
+    });
+  } catch { return []; }
+}
+
+const ids = Object.keys(FASES_DO_JOGO);
+document.getElementById("grade").innerHTML = ids.map((id, i) => { const f = FASES_DO_JOGO[id]; return `<div class="fase">
+  <img src="${f.img}" alt="${f.nome}">
+  <div class="info">${diagrama(f.harmonia)}<div><b><span class="n">${i + 1}.</span>${f.nome}</b><span>${HARMONIAS_NOMES[f.harmonia] || f.harmonia}</span></div></div>
+  <div class="cores" id="cores-${i}"></div>
+</div>`; }).join("");
+ids.forEach(async (id, i) => {
+  const cores = await coresDaFase(id);
+  document.getElementById("cores-" + i).innerHTML = cores.length ? rodaComCores(cores) + `<span>${cores.map((c) => c.nome).join(" · ")}</span>` : `<span>(abra pelo servidor para ver as cores)</span>`;
+});
+</script>
+</body>
+</html>

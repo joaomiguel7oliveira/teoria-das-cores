@@ -13,11 +13,12 @@ const HARMONIAS_PERGUNTA = {
   triade: { rotulo: "Tríade", dica: "Três cores igualmente espaçadas no círculo dão variedade com equilíbrio." },
   monocromatica: { rotulo: "Monocromática", dica: "Uma só cor com tons claros e escuros dá unidade e elegância." },
   tetradica: { rotulo: "Tetrádica", dica: "Quatro cores, em dois pares de opostas, dão uma paleta rica e variada." },
+  quadrada: { rotulo: "Quadrada", dica: "Quatro cores igualmente espaçadas no círculo, formando um quadrado." },
 };
 
 // Desenho sem cor: círculo com os pontos de cada harmonia (o mesmo do jogo)
 function diagramaHarmonia(tipo) {
-  const c = 50, r = 38, ang = { analoga: [-30, 0, 30], complementar: [0, 180], triade: [0, 120, 240], tetradica: [-60, 60, 120, 240] };
+  const c = 50, r = 38, ang = { analoga: [-30, 0, 30], complementar: [0, 180], triade: [0, 120, 240], tetradica: [-60, 60, 120, 240], quadrada: [0, 90, 180, 270] };
   const pt = (a) => [c + r * Math.sin((a * Math.PI) / 180), c - r * Math.cos((a * Math.PI) / 180)];
   let forma;
   if (tipo === "monocromatica") {
@@ -336,7 +337,8 @@ const TEMPO_RESULTADO = CFG.tempoResultado || 8, TEMPO_COMBINACAO = CFG.tempoCom
 // A ordem fica guardada na aba do navegador (sessionStorage): a fase em que o aluno entrou é a primeira, as outras são sorteadas.
 // Ao terminar a última fase, uma nova partida começa com outra ordem sorteada.
 const ORDEM_JOGO = ["prototipo-neve", "prototipo-casa", "prototipo-ninfeias", "prototipo-rita-lee", "prototipo-cacto",
-  "prototipo-pooh", "prototipo-burger-king", "prototipo-snoopy", "prototipo-perry", "prototipo-victorias-secret", "prototipo-menina-afega", "prototipo-lego"];
+  "prototipo-pooh", "prototipo-burger-king", "prototipo-snoopy", "prototipo-perry", "prototipo-victorias-secret", "prototipo-menina-afega", "prototipo-lego",
+  "prototipo-bob-esponja", "prototipo-blade-runner", "prototipo-kung-fu-panda", "prototipo-picole", "prototipo-gumball", "prototipo-mario", "prototipo-ikea", "prototipo-a-sobremesa", "prototipo-batman", "prototipo-logan", "prototipo-concerto", "prototipo-natura-ekos", "prototipo-noite-estrelada", "prototipo-coca-cola", "prototipo-mondrian", "prototipo-abaporu"];
 const paginaAtual = () => location.pathname.split("/").pop().replace(/\.html$/, "");
 
 function embaralhar(lista) {
@@ -500,11 +502,27 @@ const CREDITOS = {
   "prototipo-victorias-secret": "Embalagens da Victoria's Secret",
   "prototipo-menina-afega": "<i>Menina afegã</i> (Sharbat Gula), foto de Steve McCurry, 1984",
   "prototipo-lego": "Logotipo da LEGO",
+  "prototipo-bob-esponja": "Pôster de <i>Bob Esponja: Um Herói Fora d'Água</i> (Nickelodeon/Paramount, 2015)",
+  "prototipo-blade-runner": "Pôster de <i>Blade Runner 2049</i> (2017)",
+  "prototipo-kung-fu-panda": "Pôster de <i>Kung Fu Panda</i> (DreamWorks, 2008)",
+  "prototipo-picole": "Anúncio do picolé Magnum Double Cherry",
+  "prototipo-gumball": "Gumball e Darwin, de <i>O Incrível Mundo de Gumball</i> (Cartoon Network)",
+  "prototipo-mario": "Mario, da Nintendo",
+  "prototipo-ikea": "Logotipo da IKEA",
+  "prototipo-a-sobremesa": "Henri Matisse, <i>A Sobremesa: Harmonia em Vermelho</i> (1908)",
+  "prototipo-batman": "Pôster de <i>The Batman</i> (Warner Bros., 2022)",
+  "prototipo-logan": "Pôster de <i>Logan</i> (20th Century Fox, 2017)",
+  "prototipo-concerto": "Pôster de concerto da Philadelphia Young Artists Orchestra",
+  "prototipo-natura-ekos": "Embalagens Natura Ekos Maracujá",
+  "prototipo-noite-estrelada": "Vincent van Gogh, <i>A Noite Estrelada</i> (1889)",
+  "prototipo-coca-cola": "Logotipo da Coca-Cola",
+  "prototipo-mondrian": "Piet Mondrian, <i>Composição II em Vermelho, Azul e Amarelo</i> (1930)",
+  "prototipo-abaporu": "Tarsila do Amaral, <i>Abaporu</i> (1928)",
 };
 // altura reservada embaixo da imagem da tela de ajuste para a legenda (usada no encaixar() de cada tela)
 var LEGENDA_IMAGEM = CREDITOS[paginaAtual()] ? 26 : 0;
 // personagens sobre fundo branco: sem moldura e em "multiplicar", para o branco se fundir com o fundo da página
-const FUNDO_BRANCO = ["prototipo-pooh", "prototipo-perry", "prototipo-burger-king"];
+const FUNDO_BRANCO = ["prototipo-pooh", "prototipo-perry", "prototipo-burger-king", "prototipo-gumball", "prototipo-mario", "prototipo-natura-ekos", "prototipo-coca-cola"];
 if (FUNDO_BRANCO.includes(paginaAtual())) document.documentElement.classList.add("fundo-branco");
 
 // contagem regressiva no lugar de um botão: anel que esvazia e os segundos no meio; ao fim, chama aoTerminar
