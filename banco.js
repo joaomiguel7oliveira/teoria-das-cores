@@ -39,9 +39,9 @@ const FASES_DO_JOGO = {
   "prototipo-concerto": { nome: "Pôster de concerto", img: "img/concerto.jpg", harmonia: "analoga" },
   "prototipo-natura-ekos": { nome: "Natura Ekos", img: "img/natura-ekos.jpg", harmonia: "analoga" },
   "prototipo-noite-estrelada": { nome: "Noite Estrelada", img: "img/noite-estrelada.jpg", harmonia: "complementar" },
+  "prototipo-superman": { nome: "Superman", img: "img/superman.jpg", harmonia: "triade" },
   "prototipo-coca-cola": { nome: "Coca-Cola", img: "img/coca-cola.png", harmonia: "monocromatica" },
   "prototipo-mondrian": { nome: "Mondrian", img: "img/mondrian.jpg", harmonia: "triade" },
-  "prototipo-abaporu": { nome: "Abaporu", img: "img/abaporu.jpg", harmonia: "analoga" },
 };
 
 // Regras padrão (valem enquanto o moderador não mudar nada, ou sem internet)

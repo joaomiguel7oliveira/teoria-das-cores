@@ -3,7 +3,7 @@
 //   com internet  → busca a versão nova (assim as atualizações aparecem) e atualiza a cópia;
 //   sem internet  → usa a cópia guardada (o jogo abre e funciona; partidas ficam na fila e são enviadas depois).
 // Ao incluir arquivos novos (ex.: uma fase nova), acrescente-os em ARQUIVOS e troque a VERSAO.
-const VERSAO = "teoria-das-cores-v6";
+const VERSAO = "teoria-das-cores-v9";
 const ARQUIVOS = [
   "./",
   "banco.js",
@@ -28,7 +28,6 @@ const ARQUIVOS = [
   "img/embutidas/a-sobremesa.js",
   "img/embutidas/coca-cola.js",
   "img/embutidas/mondrian.js",
-  "img/embutidas/abaporu.js",
   "img/embutidas/batman.js",
   "img/embutidas/logan.js",
   "img/embutidas/concerto.js",
@@ -52,7 +51,6 @@ const ARQUIVOS = [
   "img/a-sobremesa.jpg",
   "img/coca-cola.png",
   "img/mondrian.jpg",
-  "img/abaporu.jpg",
   "img/batman.jpg",
   "img/logan.jpg",
   "img/concerto.jpg",
@@ -68,6 +66,8 @@ const ARQUIVOS = [
   "img/victorias-secret.jpg",
   "index.html",
   "inicio.html",
+  "aula.html",
+  "img/superman.jpg",
   "painel.html",
   "pergunta.js",
   "prototipo-burger-king.html",
@@ -84,7 +84,8 @@ const ARQUIVOS = [
   "prototipo-a-sobremesa.html",
   "prototipo-coca-cola.html",
   "prototipo-mondrian.html",
-  "prototipo-abaporu.html",
+  "prototipo-superman.html",
+  "img/embutidas/superman.js",
   "prototipo-batman.html",
   "prototipo-logan.html",
   "prototipo-concerto.html",

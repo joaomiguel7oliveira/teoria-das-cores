@@ -338,7 +338,7 @@ const TEMPO_RESULTADO = CFG.tempoResultado || 8, TEMPO_COMBINACAO = CFG.tempoCom
 // Ao terminar a última fase, uma nova partida começa com outra ordem sorteada.
 const ORDEM_JOGO = ["prototipo-neve", "prototipo-casa", "prototipo-ninfeias", "prototipo-rita-lee", "prototipo-cacto",
   "prototipo-pooh", "prototipo-burger-king", "prototipo-snoopy", "prototipo-perry", "prototipo-victorias-secret", "prototipo-menina-afega", "prototipo-lego",
-  "prototipo-bob-esponja", "prototipo-blade-runner", "prototipo-kung-fu-panda", "prototipo-picole", "prototipo-gumball", "prototipo-mario", "prototipo-ikea", "prototipo-a-sobremesa", "prototipo-batman", "prototipo-logan", "prototipo-concerto", "prototipo-natura-ekos", "prototipo-noite-estrelada", "prototipo-coca-cola", "prototipo-mondrian", "prototipo-abaporu"];
+  "prototipo-bob-esponja", "prototipo-blade-runner", "prototipo-kung-fu-panda", "prototipo-picole", "prototipo-gumball", "prototipo-mario", "prototipo-ikea", "prototipo-a-sobremesa", "prototipo-batman", "prototipo-logan", "prototipo-concerto", "prototipo-natura-ekos", "prototipo-noite-estrelada", "prototipo-coca-cola", "prototipo-mondrian", "prototipo-superman"];
 const paginaAtual = () => location.pathname.split("/").pop().replace(/\.html$/, "");
 
 function embaralhar(lista) {
@@ -515,9 +515,9 @@ const CREDITOS = {
   "prototipo-concerto": "Pôster de concerto da Philadelphia Young Artists Orchestra",
   "prototipo-natura-ekos": "Embalagens Natura Ekos Maracujá",
   "prototipo-noite-estrelada": "Vincent van Gogh, <i>A Noite Estrelada</i> (1889)",
+  "prototipo-superman": "Superman (DC Comics)",
   "prototipo-coca-cola": "Logotipo da Coca-Cola",
   "prototipo-mondrian": "Piet Mondrian, <i>Composição II em Vermelho, Azul e Amarelo</i> (1930)",
-  "prototipo-abaporu": "Tarsila do Amaral, <i>Abaporu</i> (1928)",
 };
 // altura reservada embaixo da imagem da tela de ajuste para a legenda (usada no encaixar() de cada tela)
 var LEGENDA_IMAGEM = CREDITOS[paginaAtual()] ? 26 : 0;
