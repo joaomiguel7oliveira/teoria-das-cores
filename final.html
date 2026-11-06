@@ -132,7 +132,7 @@ function mostrarRanking(lista, nomeRodada) {
     return;
   }
   const cfg = await Banco.atualizarConfig();
-  const rodada = Banco.rodadaDoJogo() || cfg.rodada || { id: "sem-rodada", nome: "" };   // a rodada em que a pessoa começou
+  const rodada = Banco.rodadaDoJogo() || Banco.rodadaAberta(cfg) || { id: "sem-rodada", nome: "" };   // a rodada em que a pessoa começou
   Banco.ouvirRodada(rodada.id, (lista) => mostrarRanking(lista, rodada.nome));   // ao vivo: entra quem terminar depois
   if (!sessionStorage.getItem("partida_salva") && fases.length) {
     sessionStorage.setItem("partida_salva", "1");

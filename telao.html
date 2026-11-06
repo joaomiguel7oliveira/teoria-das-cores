@@ -88,16 +88,30 @@ const PRAZO_JOGANDO = 20 * 60000;
 const normNome = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
 function jogandoAgora(r) {
   const agora = Date.now(), terminaram = new Set(partidas.map((p) => normNome(p.nome)));   // já tem partida: não mostra como "jogando"
-  return estacoes.filter((e) => e.status === "jogando" && e.rodada === r.id && agora - msDe(e.atualizado) < PRAZO_JOGANDO && !terminaram.has(normNome(e.jogador)));
+  return estacoes.filter((e) => e.status === "jogando" && (e.rodada === r.id || e.rodada === "sem-rodada") && agora - msDe(e.atualizado) < PRAZO_JOGANDO && !terminaram.has(normNome(e.jogador)));
+}
+// quem já está jogando enquanto NÃO há rodada aberta (o PC grava a estação como "sem-rodada")
+function jogandoSemRodada() {
+  const agora = Date.now();
+  return estacoes.filter((e) => e.status === "jogando" && e.rodada === "sem-rodada" && agora - msDe(e.atualizado) < PRAZO_JOGANDO);
 }
 function desenhar() {
   const r = cfg?.rodada;
   let html;
-  // sem rodada, ou rodada encerrada sem ninguém: tela de espera
+  // sem rodada, ou rodada encerrada sem ninguém: tela de espera (a menos que já haja gente jogando: aí mostra os nomes)
   if (r?.id && r.encerrada && !carregadas) return;   // espera as partidas chegarem (evita piscar a tela de espera)
   const esperando = !r?.id || (r.encerrada && !partidas.length);
-  if (esperando) {
+  const antes = esperando ? jogandoSemRodada() : [];   // jogando antes de a rodada começar
+  const telaEspera = esperando && !antes.length;
+  if (telaEspera) {
     html = `<iframe class="espera-frame" src="inicio.html#telao" title="Aguardando a próxima rodada"></iframe>`;   // o recorde aparece dentro dela
+  } else if (esperando) {
+    const resto = antes.map((e) => ({ nome: e.jogador || e.id }));
+    const linhas = Math.max(1, Math.ceil(resto.length / 2));   // metade em cada coluna
+    const fonte = `clamp(.8rem, ${Math.min(3.4, 64 / linhas).toFixed(2)}vh, 1.7rem)`;
+    html = `<div class="tela final"><h1>Teoria das Cores</h1><p class="sub">${resto.length} ${resto.length === 1 ? "participante" : "participantes"}</p>
+      <ol class="lista sem-pos" style="--linhas:${linhas};--fonte:${fonte}">${resto.map((p) => `<li class="jogando"><span class="pos"><i></i></span><span class="nome">${esc(p.nome)}</span><span class="pts">jogando…</span></li>`).join("")}</ol>
+      ${rodapeRecorde()}</div>`;
   } else if (!r.encerrada) {
     // estilo B: o próprio ranking, ao vivo (com pontos); estilo C: o mesmo layout, só com nomes (pontos só no fim)
     const jogando = jogandoAgora(r);
@@ -124,9 +138,9 @@ function desenhar() {
       ${usadas.length ? `<div class="gabarito"><span>Respostas certas</span><div class="itens">${usadas.map((f) => `<div class="gab"><img src="${FASES_DO_JOGO[f].img}" alt=""><div><b>${HARMONIAS_NOMES[FASES_DO_JOGO[f].harmonia] || ""}</b><small>${esc(FASES_DO_JOGO[f].nome)}</small></div></div>`).join("")}</div></div>` : ""}
       ${rodapeRecorde()}</div>`;
   }
-  document.body.classList.toggle("sem-rodada", esperando);
+  document.body.classList.toggle("sem-rodada", telaEspera);
   if (html === ultimaTela) return;   // não refaz a tela (e a animação) sem mudança
-  const estado = esperando ? "espera" : r.encerrada ? "fim" : "vivo";
+  const estado = telaEspera ? "espera" : esperando ? "vivo" : r.encerrada ? "fim" : "vivo";
   ultimaTela = html;
   palco.innerHTML = html;
   if (estado === ultimoEstado) palco.firstElementChild?.style.setProperty("animation", "none");

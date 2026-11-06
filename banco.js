@@ -259,9 +259,12 @@ const Banco = (() => {
     if (!id) { id = "PC-" + Math.random().toString(36).slice(2, 6).toUpperCase(); try { localStorage.setItem("estacao", id); } catch {} }
     return id;
   }
+  // Rodada valendo agora: a que está aberta (existe e não foi encerrada). Sem rodada aberta devolve null: quem entra nesse
+  // meio-tempo fica como "sem-rodada" e o telão o mostra como "jogando…" assim que o moderador começar a próxima rodada.
+  const rodadaAberta = (cfg) => (cfg?.rodada?.id && !cfg.rodada.encerrada ? cfg.rodada : null);
   async function informarEstacao(status, jogador) {
     if (!db) return;
-    const rodada = (status !== "livre" && status !== "demo" && rodadaDoJogo()) || configLocal().rodada;
+    const rodada = (status !== "livre" && status !== "demo" && rodadaDoJogo()) || rodadaAberta(configLocal());
     const dados = { status, jogador: (jogador || "").slice(0, 20), rodada: rodada?.id || "sem-rodada", fila: lerLocal("fila_partidas", []).length, atualizado: firebase.firestore.FieldValue.serverTimestamp() };
     if (status === "jogando") dados.inicio = Date.now();
     try { await db.collection("estacoes").doc(idDaEstacao()).set(dados, { merge: true }); } catch (e) { console.warn("estação:", e); }
@@ -277,10 +280,11 @@ const Banco = (() => {
     const norm = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
     const alvo = norm(nome);
     const busca = (async () => {
-      const cfg = await atualizarConfig(), rodada = cfg.rodada?.id || "sem-rodada";
+      const cfg = await atualizarConfig(), rodada = rodadaAberta(cfg)?.id || "sem-rodada";
       const [ps, es] = await Promise.all([
         db.collection("partidas").where("rodada", "==", rodada).get(),
-        db.collection("estacoes").where("rodada", "==", rodada).get(),
+        // inclui quem entrou antes de a rodada começar ("sem-rodada"): esses também entram nesta rodada
+        db.collection("estacoes").where("rodada", "in", [...new Set([rodada, "sem-rodada"])]).get(),
       ]);
       if (ps.docs.some((d) => norm(d.data().nome) === alvo)) return true;
       const eu = idDaEstacao(), agora = Date.now();
@@ -295,7 +299,7 @@ const Banco = (() => {
   const sair = () => auth.signOut();
   const aoMudarLogin = (fn) => (auth ? auth.onAuthStateChanged(fn) : fn(null));
 
-  return { disponivel: !!db, configLocal, atualizarConfig, ouvirConfig, salvarConfig, encerrarRodada, novaRodada, historico, idDaEstacao, informarEstacao, rodadaDoJogo, ouvirEstacoes, apagarEstacao, nomeEmUso, resumir, apagarPartida, salvarPartida, enviarFila, partidasDaRodada, ouvirRodada, ouvirRecorde, apagarRecorde, entrar, sair, aoMudarLogin };
+  return { disponivel: !!db, configLocal, atualizarConfig, ouvirConfig, salvarConfig, encerrarRodada, novaRodada, historico, idDaEstacao, informarEstacao, rodadaDoJogo, rodadaAberta, ouvirEstacoes, apagarEstacao, nomeEmUso, resumir, apagarPartida, salvarPartida, enviarFila, partidasDaRodada, ouvirRodada, ouvirRecorde, apagarRecorde, entrar, sair, aoMudarLogin };
 })();
 
 // Pontos para MOSTRAR: o banco guarda sempre os pontos reais (total e maximo); com "Nota de 0 a 100" ligada no painel,
